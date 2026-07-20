@@ -1,0 +1,91 @@
+@model Elwala.Models.AffiliateResponse
+@{
+    ViewData["Title"] = "Affiliate Link Generated";
+}
+
+<style>
+    /* Override dark theme for this page */
+    body {
+        background: #f8f9fa !important;
+        color: #111827 !important;
+    }
+    .glass-card {
+        background: #ffffff !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    .text-secondary {
+        color: #4b5563 !important;
+    }
+    .form-control, .input-group-text {
+        background-color: #f3f4f6 !important;
+        color: #111827 !important;
+        border: 1px solid #d1d5db !important;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="glass-card mt-5 p-5 text-center">
+                <div class="mb-4">
+                    <img src="~/images/logo.png" alt="El-Lwaa Logo" class="mb-4" style="max-height: 70px; max-width: 100%; object-fit: contain;" />
+                    <div>
+                        <div class="d-inline-flex align-items-center justify-content-center bg-success bg-opacity-25 rounded-circle mb-3" style="width: 80px; height: 80px;">
+                            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+                        </div>
+                    </div>
+                    <h2 class="fw-bold" style="background: linear-gradient(90deg, #10b981, #34d399); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Link Generated Successfully!</h2>
+                </div>
+                <div class="card-body">
+                    @if (Model.Success)
+                    {
+                        <p class="text-secondary fs-5 mb-4">The secure affiliate tracking link is ready for your partner.</p>
+                        
+                        <div class="input-group input-group-lg mb-4 mt-3 shadow-sm rounded-3 overflow-hidden">
+                            <span class="input-group-text border-secondary" style="background-color: var(--card-bg); color: var(--accent-color);"><i class="bi bi-link"></i></span>
+                            <input type="text" id="affiliateUrlInput" class="form-control border-secondary text-white text-center fs-6" style="background-color: var(--bg-color);" value="@Model.AffiliateUrl" readonly />
+                            <button class="btn btn-primary px-4" type="button" onclick="copyToClipboard()" id="copyBtn" style="background: linear-gradient(90deg, #d4af37, #b5952f); border: none; color: #1a2b3c; font-weight: bold;">
+                                <i class="bi bi-clipboard me-1"></i> Copy Link
+                            </button>
+                        </div>
+                        
+                        <a asp-action="Affiliate" class="btn btn-outline-light px-4 py-2 mt-2 rounded-pill">
+                            <i class="bi bi-arrow-left me-2"></i> Generate Another Link
+                        </a>
+                    }
+                    else
+                    {
+                        <h4 class="text-danger mb-3">Oops, something went wrong.</h4>
+                        <div class="alert alert-danger" role="alert">
+                            @Model.ErrorMessage
+                        </div>
+                        <a asp-action="Affiliate" class="btn btn-outline-primary mt-3">Try Again</a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function copyToClipboard() {
+            var copyText = document.getElementById("affiliateUrlInput");
+            copyText.select();
+            copyText.setSelectionRange(0, 99999);
+            navigator.clipboard.writeText(copyText.value).then(function() {
+                var btn = document.getElementById("copyBtn");
+                var originalHtml = btn.innerHTML;
+                btn.innerHTML = '<i class="bi bi-check2 me-1"></i> Copied!';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-success');
+                setTimeout(function() {
+                    btn.innerHTML = originalHtml;
+                    btn.classList.remove('btn-success');
+                    btn.classList.add('btn-primary');
+                }, 2000);
+            });
+        }
+    </script>
+}

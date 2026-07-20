@@ -1,0 +1,115 @@
+@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap');
+
+:root {
+  --bg-color: #1a2b3c; /* Deep Blue matching logo */
+  --card-bg: rgba(26, 43, 60, 0.85); /* Semi-transparent Deep Blue */
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-color: #d4af37; /* Elegant Gold */
+  --accent-hover: #b5952f; /* Darker Gold */
+  --glass-border: rgba(212, 175, 55, 0.2); /* Gold tinted border */
+  --input-bg: rgba(15, 23, 42, 0.6);
+}
+
+body {
+  font-family: 'Outfit', sans-serif;
+  background: linear-gradient(135deg, #101a24 0%, #20354a 100%);
+  color: var(--text-primary);
+  min-height: 100vh;
+  margin-bottom: 60px;
+}
+
+/* Glassmorphism Utilities */
+.glass-card {
+  background: var(--card-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 1rem;
+  box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.glass-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.6);
+}
+
+/* Inputs */
+.form-control, .form-select {
+  background-color: var(--input-bg);
+  border: 1px solid var(--glass-border);
+  color: var(--text-primary);
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  background-color: var(--input-bg);
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 0.25rem rgba(212, 175, 55, 0.25);
+  color: var(--text-primary);
+}
+
+/* Fix option colors in select dropdown */
+.form-select option {
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+}
+
+/* Labels */
+.form-label {
+  color: var(--text-secondary);
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+/* Buttons */
+.btn-primary {
+  background: linear-gradient(90deg, var(--accent-color), var(--accent-hover));
+  border: none;
+  color: var(--bg-color);
+  font-weight: 600;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(212, 175, 55, 0.4);
+}
+
+.btn-primary:hover {
+  background: linear-gradient(90deg, var(--accent-hover), #997a22);
+  color: var(--bg-color);
+  transform: scale(1.02);
+  box-shadow: 0 6px 20px rgba(212, 175, 55, 0.6);
+}
+
+/* Navbar */
+.glass-nav {
+  background: rgba(15, 23, 42, 0.8) !important;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--glass-border) !important;
+}
+
+.glass-nav .nav-link, .glass-nav .navbar-brand {
+  color: var(--text-primary) !important;
+  font-weight: 500;
+}
+
+.glass-nav .nav-link:hover {
+  color: var(--accent-color) !important;
+}
+
+/* Text Colors */
+.text-danger {
+  color: #ef4444 !important;
+}
+.text-success {
+  color: #10b981 !important;
+}
+
+/* Layout */
+html {
+  position: relative;
+  min-height: 100%;
+}

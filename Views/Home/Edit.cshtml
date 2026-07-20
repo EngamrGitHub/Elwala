@@ -1,0 +1,161 @@
+@model AffiliateRequest
+
+@{
+    ViewData["Title"] = "Edit Affiliate";
+}
+
+<style>
+    body {
+        background: #f8f9fa !important;
+        color: #111827 !important;
+    }
+    .glass-card {
+        background: #ffffff !important;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08) !important;
+        border: 1px solid #e5e7eb !important;
+    }
+    .glass-card p.text-secondary {
+        color: #4b5563 !important;
+    }
+    .form-control, .form-select, .input-group-text {
+        background-color: #ffffff !important;
+        color: #111827 !important;
+        border: 1px solid #d1d5db !important;
+    }
+    .form-label {
+        color: #374151 !important;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="glass-card mt-3 p-4">
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <h2 class="fw-bold m-0" style="color: #1a2b3c;"><i class="bi bi-pencil-square text-warning me-2"></i>Edit Affiliate</h2>
+                    <a asp-action="Dashboard" class="btn btn-outline-secondary">Back to Dashboard</a>
+                </div>
+
+                <div class="card-body p-0">
+                    <form asp-action="Edit" method="post">
+                        <input type="hidden" asp-for="Id" />
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label asp-for="FullName" class="form-label">Partner Full Name</label>
+                                <input asp-for="FullName" class="form-control" />
+                                <span asp-validation-for="FullName" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="PhoneNumber" class="form-label">Contact Number</label>
+                                <input asp-for="PhoneNumber" class="form-control" />
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6 mb-3 mb-md-0">
+                                <label asp-for="Slug" class="form-label">URL Slug</label>
+                                <div class="input-group">
+                                    <span class="input-group-text border-secondary bg-light text-muted">.../ref=</span>
+                                    <input asp-for="Slug" class="form-control" />
+                                </div>
+                                <span asp-validation-for="Slug" class="text-danger"></span>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Type" class="form-label">Partner Type</label>
+                                <select asp-for="Type" class="form-select" asp-items="Html.GetEnumSelectList<Elwala.Models.PartnerType>()">
+                                    <option value="">Select Type...</option>
+                                </select>
+                                <span asp-validation-for="Type" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label asp-for="LanguageCode" class="form-label">Default Link Language</label>
+                                <select asp-for="LanguageCode" class="form-select">
+                                    <option value="ar">العربية (Arabic)</option>
+                                    <option value="en">English</option>
+                                    <option value="zh">中文 (Chinese)</option>
+                                    <option value="ur">اردو (Urdu)</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label asp-for="Count" class="form-label">Hits/Payments Count</label>
+                                <input asp-for="Count" class="form-control" type="number" min="0" />
+                                <span asp-validation-for="Count" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label d-flex justify-content-between align-items-center">
+                                <span>Platform URLs</span>
+                                <button type="button" class="btn btn-sm rounded-pill px-3 btn-outline-warning" onclick="addPlatformField()">
+                                    <i class="bi bi-plus-lg"></i> Add URL
+                                </button>
+                            </label>
+                            <div id="platformsContainer">
+                                @if (Model.PlatformUrls != null && Model.PlatformUrls.Any())
+                                {
+                                    var index = 0;
+                                    foreach (var url in Model.PlatformUrls)
+                                    {
+                                        <div class="row mb-2 platform-row">
+                                            <div class="col-4">
+                                                <input type="text" name="PlatformUrls[@index].Key" class="form-control" value="@url.Key" />
+                                            </div>
+                                            <div class="col-7">
+                                                <input type="url" name="PlatformUrls[@index].Value" class="form-control" value="@url.Value" />
+                                            </div>
+                                            <div class="col-1 d-flex align-items-center justify-content-center">
+                                                <button type="button" class="btn btn-sm btn-outline-danger py-2 px-3" title="Remove URL" onclick="this.closest('.platform-row').remove()">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        index++;
+                                    }
+                                }
+                            </div>
+                        </div>
+
+                        <div class="d-grid mt-4">
+                            <button type="submit" class="btn btn-primary btn-lg shadow-sm" style="color:wheat">
+                                <i class="bi bi-save me-2"></i> Save Changes
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    <script>
+        let platformIndex = @((Model.PlatformUrls != null) ? Model.PlatformUrls.Count : 0);
+        function addPlatformField() {
+            const container = document.getElementById('platformsContainer');
+            const row = document.createElement('div');
+            row.className = 'row mb-2 platform-row';
+            row.innerHTML = `
+                <div class="col-4">
+                    <input type="text" name="PlatformUrls[${platformIndex}].Key" class="form-control" placeholder="Platform" />
+                </div>
+                <div class="col-7">
+                    <input type="url" name="PlatformUrls[${platformIndex}].Value" class="form-control" placeholder="URL" />
+                </div>
+                <div class="col-1 d-flex align-items-center justify-content-center">
+                    <button type="button" class="btn btn-sm btn-outline-danger py-2 px-3" title="Remove URL" onclick="this.closest('.platform-row').remove()">
+                        <i class="bi bi-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(row);
+            platformIndex++;
+        }
+    </script>
+}

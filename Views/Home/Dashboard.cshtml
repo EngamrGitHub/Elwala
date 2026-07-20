@@ -1,0 +1,126 @@
+@model IEnumerable<Elwala.Models.AffiliateRequest>
+
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<style>
+    body {
+        background: #f8f9fa !important;
+        color: #111827 !important;
+    }
+    .dashboard-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid #e5e7eb;
+        padding: 2rem;
+    }
+    .table th {
+        background-color: #f3f4f6;
+        color: #374151;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+    .table td {
+        vertical-align: middle;
+        color: #4b5563;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="dashboard-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold m-0" style="color: #1a2b3c;"><i class="bi bi-speedometer2 text-warning me-2"></i>Affiliates Dashboard</h2>
+            <a asp-action="Affiliate" class="btn btn-primary" style="background: linear-gradient(90deg, #d4af37, #b5952f); border: none; color: #1a2b3c; font-weight: bold;">
+                <i class="bi bi-plus-lg"></i> New Affiliate
+            </a>
+        </div>
+
+        <form method="get" asp-action="Dashboard" class="row g-3 mb-4 align-items-end p-3 bg-light rounded border">
+            <div class="col-md-4">
+                <label for="fromDate" class="form-label fw-bold">From Date</label>
+                <input type="date" id="fromDate" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+            </div>
+            <div class="col-md-4">
+                <label for="toDate" class="form-label fw-bold">To Date</label>
+                <input type="date" id="toDate" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-dark px-4 me-2"><i class="bi bi-funnel"></i> Filter</button>
+                <a asp-action="Dashboard" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Full Name</th>
+                        <th>Phone</th>
+                        <th>Slug</th>
+                        <th>Type</th>
+                        <th>Lang</th>
+                        <th>Hits/Payments</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MMM-dd")</td>
+                                <td class="fw-bold">@item.FullName</td>
+                                <td>@item.PhoneNumber</td>
+                                <td><span class="badge bg-light text-dark border">@item.Slug</span></td>
+                                <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary">@item.Type</span></td>
+                                <td><span class="badge bg-secondary">@item.LanguageCode</span></td>
+                                <td class="text-center fw-bold fs-5 text-success">@item.Count</td>
+                                <td class="text-center">
+                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                        <i class="bi bi-pencil-square"></i> Edit
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="8" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No affiliates found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPages > 1)
+        {
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="Dashboard" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate">Previous</a>
+                    </li>
+                    
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-action="Dashboard" asp-route-page="@i" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="Dashboard" asp-route-page="@(ViewBag.CurrentPage + 1)" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
