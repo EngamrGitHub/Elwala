@@ -1,0 +1,111 @@
+@model IEnumerable<Elwala.Models.AffiliatePayment>
+
+@{
+    ViewData["Title"] = "Payments Dashboard";
+}
+
+<style>
+    body {
+        background: #f8f9fa !important;
+        color: #111827 !important;
+    }
+    .dashboard-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+        border: 1px solid #e5e7eb;
+        padding: 2rem;
+    }
+    .table th {
+        background-color: #f3f4f6;
+        color: #374151;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.85rem;
+    }
+    .table td {
+        vertical-align: middle;
+        color: #4b5563;
+    }
+</style>
+
+<div class="container mt-5">
+    <div class="dashboard-card">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2 class="fw-bold m-0" style="color: #1a2b3c;"><i class="bi bi-wallet2 text-success me-2"></i>Affiliate Payments</h2>
+            <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Affiliates
+            </a>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Affiliate Name</th>
+                        <th>Status</th>
+                        <th class="text-center">Count (Hits/Payments)</th>
+                        <th class="text-center">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model != null && Model.Any())
+                    {
+                        foreach (var item in Model)
+                        {
+                            <tr>
+                                <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MMM-dd HH:mm")</td>
+                                <td class="fw-bold">@(item.AffiliateRequest?.FullName ?? "Unknown")</td>
+                                <td>
+                                    @{
+                                        var statusClass = item.Status == Elwala.Models.AffiliateStatus.Approved ? "bg-success" :
+                                                          item.Status == Elwala.Models.AffiliateStatus.Rejected ? "bg-danger" : "bg-warning text-dark";
+                                    }
+                                    <span class="badge @statusClass">@item.Status</span>
+                                </td>
+                                <td class="text-center fw-bold fs-5 text-success">@item.Count</td>
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="alert('API Integration point: Edit Payment for @item.Id')">
+                                        <i class="bi bi-pencil"></i> Update
+                                    </button>
+                                </td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
+                                No payment records found.
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        @if (ViewBag.TotalPages > 0)
+        {
+            <nav aria-label="Page navigation" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
+                        <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@(ViewBag.CurrentPage - 1)">Previous</a>
+                    </li>
+                    
+                    @for (int i = 1; i <= ViewBag.TotalPages; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
+                            <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@i">@i</a>
+                        </li>
+                    }
+
+                    <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
+                        <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@(ViewBag.CurrentPage + 1)">Next</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>

@@ -11,5 +11,6 @@ namespace Elwala.Data
         }
 
         public DbSet<AffiliateRequest> AffiliateRequests { get; set; }
+        public DbSet<AffiliatePayment> AffiliatePayments { get; set; }
     }
 }

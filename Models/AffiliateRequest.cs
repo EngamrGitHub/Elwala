@@ -24,7 +24,7 @@ namespace Elwala.Models
         [Display(Name = "Partner Type")]
         public PartnerType? Type { get; set; }
 
-        public int Count { get; set; } = 0; // Number of payments/actions
+        public ICollection<AffiliatePayment> Payments { get; set; } = new List<AffiliatePayment>();
 
         [Display(Name = "Language")]
         public string LanguageCode { get; set; } = "ar"; // Default Arabic
@@ -48,5 +48,12 @@ namespace Elwala.Models
         Marketer,
         Agency,
         Other
+    }
+
+    public enum AffiliateStatus
+    {
+        Pending,
+        Approved,
+        Rejected
     }
 }

@@ -53,6 +53,17 @@ namespace Elwala.Controllers
             _dbContext.AffiliateRequests.Add(model);
             await _dbContext.SaveChangesAsync();
 
+            // 2. Create initial payment record
+            var initialPayment = new AffiliatePayment
+            {
+                AffiliateRequestId = model.Id,
+                Status = AffiliateStatus.Pending,
+                Count = 0,
+                CreatedAt = DateTime.UtcNow
+            };
+            _dbContext.AffiliatePayments.Add(initialPayment);
+            await _dbContext.SaveChangesAsync();
+
             // Default to 'ar' if somehow not provided
             var lang = string.IsNullOrWhiteSpace(model.LanguageCode) ? "ar" : model.LanguageCode;
             var uniqueUrl = $"https://assis.ellwaa.com/{lang}/create-request?ref={Uri.EscapeDataString(cleanSlug ?? string.Empty)}";
@@ -149,7 +160,6 @@ namespace Elwala.Controllers
             affiliate.FullName = model.FullName;
             affiliate.PhoneNumber = model.PhoneNumber;
             affiliate.Type = model.Type;
-            affiliate.Count = model.Count;
             affiliate.LanguageCode = model.LanguageCode;
 
             // Handle Slug uniquely
@@ -169,6 +179,27 @@ namespace Elwala.Controllers
             await _dbContext.SaveChangesAsync();
 
             return RedirectToAction(nameof(Dashboard));
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> PaymentsDashboard(int page = 1)
+        {
+            int pageSize = 5;
+            var query = _dbContext.AffiliatePayments.Include(p => p.AffiliateRequest).AsQueryable();
+
+            int totalItems = await query.CountAsync();
+            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+
+            var payments = await query.OrderByDescending(p => p.CreatedAt)
+                                      .Skip((page - 1) * pageSize)
+                                      .Take(pageSize)
+                                      .ToListAsync();
+
+            ViewBag.CurrentPage = page;
+            ViewBag.TotalPages = totalPages;
+
+            return View(payments);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
