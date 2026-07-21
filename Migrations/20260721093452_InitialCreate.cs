@@ -6,15 +6,29 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Elwala.Migrations
 {
     /// <inheritdoc />
-    public partial class AddAffiliatePaymentAndStatus : Migration
+    public partial class InitialCreate : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
-            migrationBuilder.RenameColumn(
-                name: "Count",
-                table: "AffiliateRequests",
-                newName: "Status");
+            migrationBuilder.CreateTable(
+                name: "AffiliateRequests",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    FullName = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    PhoneNumber = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Slug = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Type = table.Column<int>(type: "int", nullable: false),
+                    LanguageCode = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    PlatformUrlsJson = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_AffiliateRequests", x => x.Id);
+                });
 
             migrationBuilder.CreateTable(
                 name: "AffiliatePayments",
@@ -23,7 +37,8 @@ namespace Elwala.Migrations
                     Id = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
                     AffiliateRequestId = table.Column<int>(type: "int", nullable: false),
-                    Status = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    Status = table.Column<int>(type: "int", nullable: false),
+                    Count = table.Column<int>(type: "int", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "datetime2", nullable: false)
                 },
                 constraints: table =>
@@ -49,10 +64,8 @@ namespace Elwala.Migrations
             migrationBuilder.DropTable(
                 name: "AffiliatePayments");
 
-            migrationBuilder.RenameColumn(
-                name: "Status",
-                table: "AffiliateRequests",
-                newName: "Count");
+            migrationBuilder.DropTable(
+                name: "AffiliateRequests");
         }
     }
 }

@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Elwala.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260720132238_AddAffiliatePaymentAndStatus")]
-    partial class AddAffiliatePaymentAndStatus
+    [Migration("20260721093452_InitialCreate")]
+    partial class InitialCreate
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -36,12 +36,14 @@ namespace Elwala.Migrations
                     b.Property<int>("AffiliateRequestId")
                         .HasColumnType("int");
 
+                    b.Property<int>("Count")
+                        .HasColumnType("int");
+
                     b.Property<DateTime>("CreatedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                    b.Property<int>("Status")
+                        .HasColumnType("int");
 
                     b.HasKey("Id");
 
@@ -79,9 +81,6 @@ namespace Elwala.Migrations
                     b.Property<string>("Slug")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
 
                     b.Property<int>("Type")
                         .HasColumnType("int");
