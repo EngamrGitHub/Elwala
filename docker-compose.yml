@@ -1,27 +1,27 @@
 version: '3.8'
 
 services:
-  elwala-web:
-    build:
-      context: .
-      dockerfile: Dockerfile
+  mvc:
+    build: .
+    container_name: mvc-app
     ports:
       - "8080:8080"
-    environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=ElwalaDb;User Id=sa;Password=Your_Str0ng_Passw0rd!;TrustServerCertificate=True;
     depends_on:
       - sqlserver
+    environment:
+      ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=ElwalaDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
 
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong@Passw0rd"
     ports:
       - "1433:1433"
-    environment:
-      - ACCEPT_EULA=Y
-      - SA_PASSWORD=Your_Str0ng_Passw0rd!
     volumes:
-      - sqlserver-data:/var/opt/mssql
+      - sql_data:/var/opt/mssql
 
 volumes:
-  sqlserver-data:
+  sql_data:
+
