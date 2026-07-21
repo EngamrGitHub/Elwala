@@ -5,10 +5,11 @@ services:
     build: .
     container_name: mvc-app
     ports:
-      - "8080:8080"
+      - "8081:8081"
     depends_on:
       - sqlserver
     environment:
+      ASPNETCORE_HTTP_PORTS: "8081"
       ConnectionStrings__DefaultConnection: "Server=sqlserver;Database=ElwalaDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
 
   sqlserver:
@@ -24,4 +25,3 @@ services:
 
 volumes:
   sql_data:
-
