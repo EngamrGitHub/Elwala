@@ -69,10 +69,24 @@ namespace Elwala.Controllers
                 return BadRequest(new { message = "Invalid status value." });
             }
 
+            var affiliateRequest = await _context.AffiliateRequests.FindAsync(payment.AffiliateRequestId);
+            if (newStatus == AffiliateStatus.Approved && payment.Status != AffiliateStatus.Approved)
+            {
+                if (affiliateRequest != null)
+                {
+                    affiliateRequest.Count += 1;
+                    _context.AffiliateRequests.Update(affiliateRequest);
+                }
+            }
+
             payment.Status = newStatus;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Status updated successfully.", data = payment });
+            return Ok(new { 
+                message = "Status updated successfully.", 
+                data = payment, 
+                currentCount = affiliateRequest?.Count 
+            });
         }
     }
 

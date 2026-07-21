@@ -24,6 +24,7 @@ namespace Elwala.Models
         [Display(Name = "Partner Type")]
         public PartnerType? Type { get; set; }
 
+        [System.Text.Json.Serialization.JsonIgnore]
         public ICollection<AffiliatePayment> Payments { get; set; } = new List<AffiliatePayment>();
 
         [Display(Name = "Language")]
