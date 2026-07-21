@@ -16,6 +16,13 @@ namespace Elwala.Controllers
             _context = context;
         }
 
+        // GET: api/affiliateapi (For browser testing)
+        [HttpGet]
+        public IActionResult Get()
+        {
+            return Ok(new { message = "The Affiliate API is running successfully!" });
+        }
+
         // POST: api/affiliateapi
         [HttpPost]
         public async Task<IActionResult> CreateAffiliate([FromBody] AffiliateRequest request)
@@ -35,7 +42,6 @@ namespace Elwala.Controllers
             {
                 AffiliateRequestId = request.Id,
                 Status = AffiliateStatus.Pending,
-                Count = 0,
                 CreatedAt = DateTime.UtcNow
             };
             _context.AffiliatePayments.Add(initialPayment);

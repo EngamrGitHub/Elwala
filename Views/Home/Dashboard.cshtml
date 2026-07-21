@@ -63,6 +63,7 @@
                         <th>Slug</th>
                         <th>Type</th>
                         <th>Lang</th>
+                        <th class="text-center">Count</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -78,6 +79,7 @@
                                 <td><span class="badge bg-light text-dark border">@item.Slug</span></td>
                                 <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary">@item.Type</span></td>
                                 <td><span class="badge bg-secondary">@item.LanguageCode</span></td>
+                                <td class="text-center fw-bold text-success">@item.Count</td>
                                 <td class="text-center">
                                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
                                         <i class="bi bi-pencil-square"></i> Edit

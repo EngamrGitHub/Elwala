@@ -65,15 +65,15 @@ namespace Elwala.Controllers
                 {
                     AffiliateRequestId = affiliate.Id,
                     Status = AffiliateStatus.Approved,
-                    Count = 1,
                     CreatedAt = DateTime.UtcNow
                 };
                 _context.AffiliatePayments.Add(payment);
+                affiliate.Count += 1;
             }
             else
             {
                 // إذا كان له سجل، نزيد العداد ونغير الحالة
-                payment.Count += 1; // يمكن جعلها = 1 حسب المنطق المطلوب
+                affiliate.Count += 1;
                 payment.Status = AffiliateStatus.Approved;
             }
             

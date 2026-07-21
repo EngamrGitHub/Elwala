@@ -58,7 +58,6 @@ namespace Elwala.Controllers
             {
                 AffiliateRequestId = model.Id,
                 Status = AffiliateStatus.Pending,
-                Count = 0,
                 CreatedAt = DateTime.UtcNow
             };
             _dbContext.AffiliatePayments.Add(initialPayment);
@@ -183,19 +182,30 @@ namespace Elwala.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> PaymentsDashboard(int page = 1)
+        public async Task<IActionResult> PaymentsDashboard(DateTime? startDate, DateTime? endDate, int page = 1)
         {
             int pageSize = 5;
             var query = _dbContext.AffiliatePayments.Include(p => p.AffiliateRequest).AsQueryable();
 
+            if (startDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date >= startDate.Value.Date);
+            }
+            if (endDate.HasValue)
+            {
+                query = query.Where(p => p.CreatedAt.Date <= endDate.Value.Date);
+            }
+
             int totalItems = await query.CountAsync();
             int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
 
-            var payments = await query.OrderByDescending(p => p.CreatedAt)
+            var payments = await query.OrderByDescending(p => p.Id)
                                       .Skip((page - 1) * pageSize)
                                       .Take(pageSize)
                                       .ToListAsync();
 
+            ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
+            ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = totalPages;
 

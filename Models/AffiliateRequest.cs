@@ -38,6 +38,8 @@ namespace Elwala.Models
         // Used by the UI to bind key-value pairs
         [System.ComponentModel.DataAnnotations.Schema.NotMapped]
         public Dictionary<string, string> PlatformUrls { get; set; } = new Dictionary<string, string>();
+
+        public int Count { get; set; } = 0;
     }
 
     public enum PartnerType

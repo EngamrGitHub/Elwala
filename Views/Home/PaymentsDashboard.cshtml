@@ -41,6 +41,21 @@
             </a>
         </div>
 
+        <form method="get" asp-action="PaymentsDashboard" class="row g-3 mb-4 align-items-end p-3 bg-light rounded border">
+            <div class="col-md-4">
+                <label for="startDate" class="form-label fw-bold">Start Date</label>
+                <input type="date" id="startDate" name="startDate" class="form-control" value="@ViewBag.StartDate" />
+            </div>
+            <div class="col-md-4">
+                <label for="endDate" class="form-label fw-bold">End Date</label>
+                <input type="date" id="endDate" name="endDate" class="form-control" value="@ViewBag.EndDate" />
+            </div>
+            <div class="col-md-4">
+                <button type="submit" class="btn btn-dark px-4 me-2"><i class="bi bi-funnel"></i> Filter</button>
+                <a asp-action="PaymentsDashboard" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+
         <div class="table-responsive">
             <table class="table table-hover align-middle">
                 <thead>
@@ -48,7 +63,6 @@
                         <th>Date</th>
                         <th>Affiliate Name</th>
                         <th>Status</th>
-                        <th class="text-center">Count (Hits/Payments)</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -67,7 +81,6 @@
                                     }
                                     <span class="badge @statusClass">@item.Status</span>
                                 </td>
-                                <td class="text-center fw-bold fs-5 text-success">@item.Count</td>
                                 <td class="text-center">
                                     <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="alert('API Integration point: Edit Payment for @item.Id')">
                                         <i class="bi bi-pencil"></i> Update

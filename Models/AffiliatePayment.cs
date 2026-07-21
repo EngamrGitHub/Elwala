@@ -15,8 +15,6 @@ namespace Elwala.Models
         public AffiliateRequest AffiliateRequest { get; set; }
 
         public AffiliateStatus Status { get; set; } = AffiliateStatus.Pending;
-        public int Count { get; set; } = 0;
-
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     }
 }

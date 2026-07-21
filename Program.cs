@@ -10,6 +10,8 @@ namespace Elwala
 
             // Add services to the container.
             builder.Services.AddControllersWithViews();
+            builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddSwaggerGen();
 
             builder.Services.AddAuthentication(Microsoft.AspNetCore.Authentication.Cookies.CookieAuthenticationDefaults.AuthenticationScheme)
                 .AddCookie(options =>
@@ -41,6 +43,13 @@ namespace Elwala
 
             app.UseHttpsRedirection();
             app.UseStaticFiles();
+
+            // Enable Swagger UI
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("/swagger/v1/swagger.json", "Affiliate API V1");
+            });
 
             app.UseRouting();
 
