@@ -78,11 +78,42 @@ namespace Elwala.Controllers
 
         [HttpGet]
         [Authorize]
-        public async Task<IActionResult> Dashboard(DateTime? fromDate, DateTime? toDate, int page = 1)
+        public async Task<IActionResult> Dashboard(
+            string? search,
+            PartnerType? partnerType,
+            AffiliateStatus? status,
+            DateTime? fromDate,
+            DateTime? toDate,
+            string? sortBy = "date_desc",
+            int page = 1)
         {
-            int pageSize = 5;
-            var query = _dbContext.AffiliateRequests.AsQueryable();
+            int pageSize = 10;
+            var query = _dbContext.AffiliateRequests
+                                  .Include(a => a.Payments)
+                                  .AsQueryable();
 
+            // Search filter
+            if (!string.IsNullOrWhiteSpace(search))
+            {
+                var term = search.Trim().ToLower();
+                query = query.Where(a => (a.FullName != null && a.FullName.ToLower().Contains(term)) ||
+                                         (a.PhoneNumber != null && a.PhoneNumber.ToLower().Contains(term)) ||
+                                         (a.Slug != null && a.Slug.ToLower().Contains(term)));
+            }
+
+            // Partner Type filter
+            if (partnerType.HasValue)
+            {
+                query = query.Where(a => a.Type == partnerType.Value);
+            }
+
+            // Status filter
+            if (status.HasValue)
+            {
+                query = query.Where(a => a.Payments.Any(p => p.Status == status.Value));
+            }
+
+            // Date Range filters
             if (fromDate.HasValue)
             {
                 query = query.Where(a => a.CreatedAt.Date >= fromDate.Value.Date);
@@ -92,21 +123,131 @@ namespace Elwala.Controllers
                 query = query.Where(a => a.CreatedAt.Date <= toDate.Value.Date);
             }
 
-            int totalItems = await query.CountAsync();
-            int totalPages = (int)Math.Ceiling(totalItems / (double)pageSize);
+            // KPI Counts across database
+            int totalAffiliates = await query.CountAsync();
+            int totalSuccessCount = await _dbContext.AffiliatePayments.CountAsync(p => p.Status == AffiliateStatus.Approved);
+            int totalNoSuccessCount = await _dbContext.AffiliatePayments.CountAsync(p => p.Status != AffiliateStatus.Approved);
 
-            // Fetch affiliates descending
-            var affiliates = await query.OrderByDescending(a => a.Id)
-                                          .Skip((page - 1) * pageSize)
+            // Sorting
+            switch (sortBy?.ToLower())
+            {
+                case "date_asc":
+                    query = query.OrderBy(a => a.CreatedAt);
+                    break;
+                case "count_desc":
+                    query = query.OrderByDescending(a => a.Count);
+                    break;
+                case "count_asc":
+                    query = query.OrderBy(a => a.Count);
+                    break;
+                case "name_asc":
+                    query = query.OrderBy(a => a.FullName);
+                    break;
+                case "name_desc":
+                    query = query.OrderByDescending(a => a.FullName);
+                    break;
+                case "date_desc":
+                default:
+                    query = query.OrderByDescending(a => a.CreatedAt);
+                    break;
+            }
+
+            int totalPages = (int)Math.Ceiling(totalAffiliates / (double)pageSize);
+            if (totalPages < 1) totalPages = 1;
+
+            var affiliates = await query.Skip((page - 1) * pageSize)
                                           .Take(pageSize)
                                           .ToListAsync();
 
+            // Deserialize PlatformUrls for each affiliate
+            foreach (var item in affiliates)
+            {
+                if (!string.IsNullOrEmpty(item.PlatformUrlsJson))
+                {
+                    try
+                    {
+                        item.PlatformUrls = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(item.PlatformUrlsJson) 
+                                            ?? new Dictionary<string, string>();
+                    }
+                    catch
+                    {
+                        item.PlatformUrls = new Dictionary<string, string>();
+                    }
+                }
+            }
+
+            ViewBag.Search = search;
+            ViewBag.PartnerType = partnerType;
+            ViewBag.Status = status;
             ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
             ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+            ViewBag.SortBy = sortBy;
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = totalPages;
+            ViewBag.TotalAffiliates = totalAffiliates;
+            ViewBag.TotalSuccessCount = totalSuccessCount;
+            ViewBag.TotalNoSuccessCount = totalNoSuccessCount;
 
             return View(affiliates);
+        }
+
+        [HttpGet]
+        [Authorize]
+        public async Task<IActionResult> Details(int id)
+        {
+            var affiliate = await _dbContext.AffiliateRequests
+                                            .Include(a => a.Payments)
+                                            .FirstOrDefaultAsync(a => a.Id == id);
+            if (affiliate == null)
+            {
+                return NotFound();
+            }
+
+            if (!string.IsNullOrEmpty(affiliate.PlatformUrlsJson))
+            {
+                try
+                {
+                    affiliate.PlatformUrls = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, string>>(affiliate.PlatformUrlsJson) 
+                                             ?? new Dictionary<string, string>();
+                }
+                catch
+                {
+                    affiliate.PlatformUrls = new Dictionary<string, string>();
+                }
+            }
+
+            if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
+            {
+                var lang = string.IsNullOrWhiteSpace(affiliate.LanguageCode) ? "ar" : affiliate.LanguageCode;
+                var uniqueUrl = $"https://assis.ellwaa.com/{lang}/create-request?ref={Uri.EscapeDataString(affiliate.Slug ?? string.Empty)}";
+                var approvedPayments = affiliate.Payments.Count(p => p.Status == AffiliateStatus.Approved);
+                var successCount = Math.Max(affiliate.Count, approvedPayments);
+                var noSuccessCount = affiliate.Payments.Count(p => p.Status != AffiliateStatus.Approved);
+
+                return Json(new
+                {
+                    id = affiliate.Id,
+                    fullName = affiliate.FullName,
+                    phoneNumber = affiliate.PhoneNumber,
+                    slug = affiliate.Slug,
+                    type = affiliate.Type?.ToString(),
+                    languageCode = affiliate.LanguageCode,
+                    createdAt = affiliate.CreatedAt.ToString("yyyy-MMM-dd HH:mm"),
+                    count = affiliate.Count,
+                    successCount = successCount,
+                    noSuccessCount = noSuccessCount,
+                    uniqueUrl = uniqueUrl,
+                    platformUrls = affiliate.PlatformUrls,
+                    payments = affiliate.Payments.Select(p => new
+                    {
+                        id = p.Id,
+                        status = p.Status.ToString(),
+                        createdAt = p.CreatedAt.ToString("yyyy-MMM-dd HH:mm")
+                    })
+                });
+            }
+
+            return View(affiliate);
         }
 
         [HttpGet]

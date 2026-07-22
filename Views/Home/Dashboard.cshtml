@@ -1,7 +1,10 @@
 @model IEnumerable<Elwala.Models.AffiliateRequest>
 
 @{
-    ViewData["Title"] = "Dashboard";
+    ViewData["Title"] = "Affiliates Dashboard";
+    var currentSort = ViewBag.SortBy as string ?? "date_desc";
+    var selectedPartnerType = ViewBag.PartnerType as Elwala.Models.PartnerType?;
+    var selectedStatus = ViewBag.Status as Elwala.Models.AffiliateStatus?;
 }
 
 <style>
@@ -16,45 +19,170 @@
         border: 1px solid #e5e7eb;
         padding: 2rem;
     }
+    .kpi-card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 1.25rem;
+        border: 1px solid #e5e7eb;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .kpi-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 16px rgba(0,0,0,0.06);
+    }
     .table th {
         background-color: #f3f4f6;
         color: #374151;
         font-weight: 600;
         text-transform: uppercase;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
+        letter-spacing: 0.5px;
     }
     .table td {
         vertical-align: middle;
         color: #4b5563;
     }
+    .filter-panel {
+        background-color: #f9fafb;
+        border: 1px solid #e5e7eb;
+        border-radius: 10px;
+        padding: 1.25rem;
+    }
 </style>
 
-<div class="container mt-5">
-    <div class="dashboard-card">
-        <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold m-0" style="color: #1a2b3c;"><i class="bi bi-speedometer2 text-warning me-2"></i>Affiliates Dashboard</h2>
-            <a asp-action="Affiliate" class="btn btn-primary" style="background: linear-gradient(90deg, #d4af37, #b5952f); border: none; color: #1a2b3c; font-weight: bold;">
-                <i class="bi bi-plus-lg"></i> New Affiliate
-            </a>
+<div class="container mt-4 mb-5">
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold m-0" style="color: #1a2b3c;">
+                <i class="bi bi-speedometer2 text-warning me-2"></i>Affiliates Dashboard
+            </h2>
+            <p class="text-muted small m-0 mt-1">Manage affiliate partners, conversions, and view detailed metrics.</p>
         </div>
+        <a asp-action="Affiliate" class="btn btn-primary shadow-sm" style="background: linear-gradient(90deg, #d4af37, #b5952f); border: none; color: #1a2b3c; font-weight: bold;">
+            <i class="bi bi-plus-lg me-1"></i> New Affiliate
+        </a>
+    </div>
 
-        <form method="get" asp-action="Dashboard" class="row g-3 mb-4 align-items-end p-3 bg-light rounded border">
-            <div class="col-md-4">
-                <label for="fromDate" class="form-label fw-bold">From Date</label>
-                <input type="date" id="fromDate" name="fromDate" class="form-control" value="@ViewBag.FromDate" />
+    <!-- Summary KPI Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="kpi-card border-start border-4 border-primary">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Total Affiliates (إجمالي المسوقين)</div>
+                        <div class="fs-2 fw-bold text-dark mt-1">@(ViewBag.TotalAffiliates ?? 0)</div>
+                    </div>
+                    <div class="bg-primary bg-opacity-10 p-3 rounded-circle text-primary">
+                        <i class="bi bi-people fs-3"></i>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-4">
-                <label for="toDate" class="form-label fw-bold">To Date</label>
-                <input type="date" id="toDate" name="toDate" class="form-control" value="@ViewBag.ToDate" />
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card border-start border-4 border-success">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Count Success (عدد الناجح)</div>
+                        <div class="fs-2 fw-bold text-success mt-1">@(ViewBag.TotalSuccessCount ?? 0)</div>
+                    </div>
+                    <div class="bg-success bg-opacity-10 p-3 rounded-circle text-success">
+                        <i class="bi bi-check-circle-fill fs-3"></i>
+                    </div>
+                </div>
             </div>
-            <div class="col-md-4">
-                <button type="submit" class="btn btn-dark px-4 me-2"><i class="bi bi-funnel"></i> Filter</button>
-                <a asp-action="Dashboard" class="btn btn-outline-secondary">Clear</a>
+        </div>
+        <div class="col-md-4">
+            <div class="kpi-card border-start border-4 border-danger">
+                <div class="d-flex align-items-center justify-content-between">
+                    <div>
+                        <div class="text-muted small fw-bold text-uppercase">Count No Success (غير الناجح)</div>
+                        <div class="fs-2 fw-bold text-danger mt-1">@(ViewBag.TotalNoSuccessCount ?? 0)</div>
+                    </div>
+                    <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
+                        <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content Card -->
+    <div class="dashboard-card">
+        <!-- Filter & Sort Form -->
+        <form method="get" asp-action="Dashboard" class="filter-panel mb-4">
+            <div class="row g-3">
+                <!-- Search Box -->
+                <div class="col-md-3">
+                    <label for="search" class="form-label fw-bold small text-secondary">Search (Name / Phone / Slug)</label>
+                    <div class="input-group">
+                        <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                        <input type="text" id="search" name="search" class="form-control" placeholder="Search..." value="@ViewBag.Search" />
+                    </div>
+                </div>
+
+                <!-- Partner Type Filter -->
+                <div class="col-md-2">
+                    <label for="partnerType" class="form-label fw-bold small text-secondary">Partner Type</label>
+                    <select id="partnerType" name="partnerType" class="form-select">
+                        <option value="">All Types</option>
+                        @foreach (var type in Enum.GetValues(typeof(Elwala.Models.PartnerType)).Cast<Elwala.Models.PartnerType>())
+                        {
+                            <option value="@type" selected="@(selectedPartnerType == type)">@type</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Payment Status Filter -->
+                <div class="col-md-2">
+                    <label for="status" class="form-label fw-bold small text-secondary">Status</label>
+                    <select id="status" name="status" class="form-select">
+                        <option value="">All Statuses</option>
+                        @foreach (var st in Enum.GetValues(typeof(Elwala.Models.AffiliateStatus)).Cast<Elwala.Models.AffiliateStatus>())
+                        {
+                            <option value="@st" selected="@(selectedStatus == st)">@st</option>
+                        }
+                    </select>
+                </div>
+
+                <!-- Sort By -->
+                <div class="col-md-2">
+                    <label for="sortBy" class="form-label fw-bold small text-secondary">Sort By</label>
+                    <select id="sortBy" name="sortBy" class="form-select">
+                        <option value="date_desc" selected="@(currentSort == "date_desc")">Newest First</option>
+                        <option value="date_asc" selected="@(currentSort == "date_asc")">Oldest First</option>
+                        <option value="count_desc" selected="@(currentSort == "count_desc")">Highest Success</option>
+                        <option value="count_asc" selected="@(currentSort == "count_asc")">Lowest Success</option>
+                        <option value="name_asc" selected="@(currentSort == "name_asc")">Name (A - Z)</option>
+                        <option value="name_desc" selected="@(currentSort == "name_desc")">Name (Z - A)</option>
+                    </select>
+                </div>
+
+                <!-- Date Range -->
+                <div class="col-md-3">
+                    <label class="form-label fw-bold small text-secondary">Date Range</label>
+                    <div class="input-group">
+                        <input type="date" name="fromDate" class="form-control" value="@ViewBag.FromDate" title="From Date" />
+                        <input type="date" name="toDate" class="form-control" value="@ViewBag.ToDate" title="To Date" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-end align-items-center mt-3 pt-2 border-top">
+                <button type="submit" class="btn btn-dark px-4 me-2">
+                    <i class="bi bi-funnel-fill me-1"></i> Apply Filter & Sort
+                </button>
+                <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-counterclockwise me-1"></i> Clear
+                </a>
             </div>
         </form>
 
+        <!-- Affiliates Table -->
         <div class="table-responsive">
-            <table class="table table-hover align-middle">
+            <table class="table table-hover align-middle mb-0">
                 <thead>
                     <tr>
                         <th>Date</th>
@@ -63,7 +191,8 @@
                         <th>Slug</th>
                         <th>Type</th>
                         <th>Lang</th>
-                        <th class="text-center">Count</th>
+                        <th class="text-center">Success Count</th>
+                        <th class="text-center">No-Success Count</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -72,18 +201,42 @@
                     {
                         foreach (var item in Model)
                         {
+                            var approvedCount = item.Payments?.Count(p => p.Status == Elwala.Models.AffiliateStatus.Approved) ?? 0;
+                            var successCount = Math.Max(item.Count, approvedCount);
+                            var noSuccessCount = item.Payments?.Count(p => p.Status != Elwala.Models.AffiliateStatus.Approved) ?? 0;
+
                             <tr>
                                 <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MMM-dd")</td>
-                                <td class="fw-bold">@item.FullName</td>
+                                <td class="fw-bold text-dark">@item.FullName</td>
                                 <td>@item.PhoneNumber</td>
                                 <td><span class="badge bg-light text-dark border">@item.Slug</span></td>
                                 <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary">@item.Type</span></td>
                                 <td><span class="badge bg-secondary">@item.LanguageCode</span></td>
-                                <td class="text-center fw-bold text-success">@item.Count</td>
+                                
+                                <!-- Success Count Badge -->
                                 <td class="text-center">
-                                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
-                                        <i class="bi bi-pencil-square"></i> Edit
-                                    </a>
+                                    <span class="badge bg-success px-3 py-2 fs-6">
+                                        <i class="bi bi-check-circle me-1"></i>@successCount
+                                    </span>
+                                </td>
+
+                                <!-- No Success Count Badge -->
+                                <td class="text-center">
+                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2 fs-6">
+                                        <i class="bi bi-x-circle me-1"></i>@noSuccessCount
+                                    </span>
+                                </td>
+
+                                <!-- Actions: View & Edit -->
+                                <td class="text-center">
+                                    <div class="btn-group" role="group">
+                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3 me-1" onclick="openViewModal(@item.Id)">
+                                            <i class="bi bi-eye"></i> View
+                                        </button>
+                                        <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
+                                            <i class="bi bi-pencil-square"></i> Edit
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         }
@@ -91,9 +244,9 @@
                     else
                     {
                         <tr>
-                            <td colspan="8" class="text-center py-4 text-muted">
-                                <i class="bi bi-inbox fs-1 d-block mb-2"></i>
-                                No affiliates found.
+                            <td colspan="9" class="text-center py-5 text-muted">
+                                <i class="bi bi-inbox fs-1 d-block mb-2 text-secondary"></i>
+                                No affiliates match the selected criteria.
                             </td>
                         </tr>
                     }
@@ -101,26 +254,231 @@
             </table>
         </div>
 
+        <!-- Pagination -->
         @if (ViewBag.TotalPages > 1)
         {
             <nav aria-label="Page navigation" class="mt-4">
                 <ul class="pagination justify-content-center">
                     <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
-                        <a class="page-link" asp-action="Dashboard" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate">Previous</a>
+                        <a class="page-link" asp-action="Dashboard"
+                           asp-route-page="@(ViewBag.CurrentPage - 1)"
+                           asp-route-search="@ViewBag.Search"
+                           asp-route-partnerType="@ViewBag.PartnerType"
+                           asp-route-status="@ViewBag.Status"
+                           asp-route-sortBy="@ViewBag.SortBy"
+                           asp-route-fromDate="@ViewBag.FromDate"
+                           asp-route-toDate="@ViewBag.ToDate">Previous</a>
                     </li>
-                    
+
                     @for (int i = 1; i <= ViewBag.TotalPages; i++)
                     {
                         <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                            <a class="page-link" asp-action="Dashboard" asp-route-page="@i" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate">@i</a>
+                            <a class="page-link" asp-action="Dashboard"
+                               asp-route-page="@i"
+                               asp-route-search="@ViewBag.Search"
+                               asp-route-partnerType="@ViewBag.PartnerType"
+                               asp-route-status="@ViewBag.Status"
+                               asp-route-sortBy="@ViewBag.SortBy"
+                               asp-route-fromDate="@ViewBag.FromDate"
+                               asp-route-toDate="@ViewBag.ToDate">@i</a>
                         </li>
                     }
 
                     <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
-                        <a class="page-link" asp-action="Dashboard" asp-route-page="@(ViewBag.CurrentPage + 1)" asp-route-fromDate="@ViewBag.FromDate" asp-route-toDate="@ViewBag.ToDate">Next</a>
+                        <a class="page-link" asp-action="Dashboard"
+                           asp-route-page="@(ViewBag.CurrentPage + 1)"
+                           asp-route-search="@ViewBag.Search"
+                           asp-route-partnerType="@ViewBag.PartnerType"
+                           asp-route-status="@ViewBag.Status"
+                           asp-route-sortBy="@ViewBag.SortBy"
+                           asp-route-fromDate="@ViewBag.FromDate"
+                           asp-route-toDate="@ViewBag.ToDate">Next</a>
                     </li>
                 </ul>
             </nav>
         }
     </div>
 </div>
+
+<!-- View Details Bootstrap Modal -->
+<div class="modal fade" id="viewAffiliateModal" tabindex="-1" aria-labelledby="viewAffiliateModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content shadow-lg border-0">
+            <div class="modal-header bg-dark text-white">
+                <h5 class="modal-title fw-bold" id="viewAffiliateModalLabel">
+                    <i class="bi bi-person-bounding-box me-2 text-warning"></i>Affiliate Profile Details
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body p-4" id="modalBodyContent">
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Loading affiliate details...</p>
+                </div>
+            </div>
+            <div class="modal-footer bg-light">
+                <a id="modalEditBtn" href="#" class="btn btn-warning fw-bold">
+                    <i class="bi bi-pencil-square me-1"></i> Edit Profile
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openViewModal(id) {
+            const modal = new bootstrap.Modal(document.getElementById('viewAffiliateModal'));
+            const modalBody = document.getElementById('modalBodyContent');
+            const editBtn = document.getElementById('modalEditBtn');
+            
+            editBtn.href = `/Home/Edit/${id}`;
+            modalBody.innerHTML = `
+                <div class="text-center py-5">
+                    <div class="spinner-border text-warning" role="status">
+                        <span class="visually-hidden">Loading...</span>
+                    </div>
+                    <p class="mt-2 text-muted">Fetching data...</p>
+                </div>
+            `;
+            modal.show();
+
+            fetch(`/Home/Details/${id}`, {
+                headers: {
+                    'X-Requested-With': 'XMLHttpRequest'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                let platformListHtml = '<span class="text-muted">No platforms specified.</span>';
+                if (data.platformUrls && Object.keys(data.platformUrls).length > 0) {
+                    platformListHtml = '<ul class="list-group list-group-flush">';
+                    for (const [key, value] of Object.entries(data.platformUrls)) {
+                        platformListHtml += `
+                            <li class="list-group-item px-0 d-flex justify-content-between">
+                                <span class="fw-bold">${key}:</span>
+                                <a href="${value}" target="_blank" class="text-primary">${value} <i class="bi bi-box-arrow-up-right small ms-1"></i></a>
+                            </li>
+                        `;
+                    }
+                    platformListHtml += '</ul>';
+                }
+
+                let paymentsHtml = '<span class="text-muted">No payment records found.</span>';
+                if (data.payments && data.payments.length > 0) {
+                    paymentsHtml = `
+                        <table class="table table-sm table-bordered mt-2 align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>#</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                    `;
+                    data.payments.forEach(p => {
+                        const statusClass = p.status === 'Approved' ? 'bg-success' :
+                                            p.status === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark';
+                        paymentsHtml += `
+                            <tr>
+                                <td>${p.id}</td>
+                                <td>${p.createdAt}</td>
+                                <td><span class="badge ${statusClass}">${p.status}</span></td>
+                            </tr>
+                        `;
+                    });
+                    paymentsHtml += '</tbody></table>';
+                }
+
+                modalBody.innerHTML = `
+                    <div class="row mb-3 align-items-center">
+                        <div class="col-md-8">
+                            <h3 class="fw-bold text-dark m-0">${data.fullName}</h3>
+                            <span class="badge bg-light text-dark border me-1">${data.slug}</span>
+                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">${data.type || 'N/A'}</span>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <span class="text-muted small">Registered: ${data.createdAt}</span>
+                        </div>
+                    </div>
+
+                    <!-- Metrics Stats -->
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <div class="p-3 bg-success bg-opacity-10 border border-success rounded text-center">
+                                <div class="text-success small fw-bold text-uppercase">Success Count (العدد الناجح)</div>
+                                <div class="fs-3 fw-bold text-success mt-1">${data.successCount}</div>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded text-center">
+                                <div class="text-danger small fw-bold text-uppercase">No-Success Count (غير الناجح)</div>
+                                <div class="fs-3 fw-bold text-danger mt-1">${data.noSuccessCount}</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Info Grid -->
+                    <div class="row mb-3">
+                        <div class="col-md-6 mb-3 mb-md-0">
+                            <div class="card h-100 border">
+                                <div class="card-header bg-light fw-bold">Contact & Details</div>
+                                <div class="card-body">
+                                    <p class="mb-2"><strong>Phone:</strong> ${data.phoneNumber}</p>
+                                    <p class="mb-0"><strong>Default Language:</strong> <span class="badge bg-secondary">${data.languageCode}</span></p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card h-100 border">
+                                <div class="card-header bg-light fw-bold">Unique Referral Link</div>
+                                <div class="card-body">
+                                    <div class="input-group">
+                                        <input type="text" id="modalUniqueUrl" class="form-control form-control-sm" value="${data.uniqueUrl}" readonly />
+                                        <button class="btn btn-sm btn-outline-primary" onclick="copyModalLink()">Copy</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Platforms -->
+                    <div class="card mb-3 border">
+                        <div class="card-header bg-light fw-bold">Platform URLs</div>
+                        <div class="card-body py-2">
+                            ${platformListHtml}
+                        </div>
+                    </div>
+
+                    <!-- Payment Logs -->
+                    <div class="card border">
+                        <div class="card-header bg-light fw-bold">Payment History</div>
+                        <div class="card-body py-2">
+                            ${paymentsHtml}
+                        </div>
+                    </div>
+                `;
+            })
+            .catch(err => {
+                modalBody.innerHTML = `
+                    <div class="alert alert-danger">
+                        <i class="bi bi-exclamation-circle me-1"></i> Failed to fetch details. Please try again.
+                    </div>
+                `;
+            });
+        }
+
+        function copyModalLink() {
+            const input = document.getElementById('modalUniqueUrl');
+            if (input) {
+                input.select();
+                navigator.clipboard.writeText(input.value);
+                alert('Copied to clipboard: ' + input.value);
+            }
+        }
+    </script>
+}
