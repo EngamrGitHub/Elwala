@@ -2,6 +2,7 @@
 
 @{
     ViewData["Title"] = "Payments Dashboard";
+    var allAffiliates = ViewBag.AllAffiliates as List<Elwala.Models.AffiliateRequest> ?? new List<Elwala.Models.AffiliateRequest>();
 }
 
 <style>
@@ -35,10 +36,15 @@
             <img src="/images/logo.png" alt="El-Lwaa Logo" class="mb-3" style="max-height: 70px; max-width: 100%; object-fit: contain;" />
         </div>
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h2 class="fw-bold m-0" style="color: #1a2b3c;"><i class="bi bi-wallet2 text-success me-2"></i>Affiliate Payments</h2>
-            <a asp-action="Dashboard" class="btn btn-outline-secondary">
-                <i class="bi bi-arrow-left"></i> Back to Affiliates
-            </a>
+            <h2 class="fw-bold m-0" style="color: #1a2b3c;"><i class="bi bi-wallet2 text-success me-2"></i>Affiliate Payments & Logs</h2>
+            <div>
+                <button type="button" class="btn btn-success me-2" data-bs-toggle="modal" data-bs-target="#addPaymentModal">
+                    <i class="bi bi-plus-lg me-1"></i> Record New Transaction
+                </button>
+                <a asp-action="Dashboard" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Affiliates
+                </a>
+            </div>
         </div>
 
         <form method="get" asp-action="PaymentsDashboard" class="row g-3 mb-4 align-items-end p-3 bg-light rounded border">
@@ -60,8 +66,10 @@
             <table class="table table-hover align-middle">
                 <thead>
                     <tr>
+                        <th>#</th>
                         <th>Date</th>
                         <th>Affiliate Name</th>
+                        <th>Slug</th>
                         <th>Status</th>
                         <th class="text-center">Actions</th>
                     </tr>
@@ -72,18 +80,20 @@
                         foreach (var item in Model)
                         {
                             <tr>
+                                <td class="fw-bold">@item.Id</td>
                                 <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MMM-dd HH:mm")</td>
-                                <td class="fw-bold">@(item.AffiliateRequest?.FullName ?? "Unknown")</td>
+                                <td class="fw-bold text-dark">@(item.AffiliateRequest?.FullName ?? "Unknown")</td>
+                                <td><span class="badge bg-light text-dark border">@(item.AffiliateRequest?.Slug ?? "N/A")</span></td>
                                 <td>
                                     @{
                                         var statusClass = item.Status == Elwala.Models.AffiliateStatus.Approved ? "bg-success" :
                                                           item.Status == Elwala.Models.AffiliateStatus.Rejected ? "bg-danger" : "bg-warning text-dark";
                                     }
-                                    <span class="badge @statusClass">@item.Status</span>
+                                    <span class="badge @statusClass px-3 py-2 fs-6">@item.Status</span>
                                 </td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="alert('API Integration point: Edit Payment for @item.Id')">
-                                        <i class="bi bi-pencil"></i> Update
+                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openUpdateModal(@item.Id, '@item.Status', '@(item.AffiliateRequest?.FullName ?? "Unknown")')">
+                                        <i class="bi bi-pencil"></i> Update Status
                                     </button>
                                 </td>
                             </tr>
@@ -92,7 +102,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="5" class="text-center py-4 text-muted">
+                            <td colspan="6" class="text-center py-4 text-muted">
                                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                 No payment records found.
                             </td>
@@ -107,21 +117,110 @@
             <nav aria-label="Page navigation" class="mt-4">
                 <ul class="pagination justify-content-center">
                     <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
-                        <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@(ViewBag.CurrentPage - 1)">Previous</a>
+                        <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@(ViewBag.CurrentPage - 1)" asp-route-startDate="@ViewBag.StartDate" asp-route-endDate="@ViewBag.EndDate">Previous</a>
                     </li>
                     
                     @for (int i = 1; i <= ViewBag.TotalPages; i++)
                     {
                         <li class="page-item @(i == ViewBag.CurrentPage ? "active" : "")">
-                            <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@i">@i</a>
+                            <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@i" asp-route-startDate="@ViewBag.StartDate" asp-route-endDate="@ViewBag.EndDate">@i</a>
                         </li>
                     }
 
                     <li class="page-item @(ViewBag.CurrentPage >= ViewBag.TotalPages ? "disabled" : "")">
-                        <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@(ViewBag.CurrentPage + 1)">Next</a>
+                        <a class="page-link" asp-action="PaymentsDashboard" asp-route-page="@(ViewBag.CurrentPage + 1)" asp-route-startDate="@ViewBag.StartDate" asp-route-endDate="@ViewBag.EndDate">Next</a>
                     </li>
                 </ul>
             </nav>
         }
     </div>
 </div>
+
+<!-- Modal: Update Payment Status -->
+<div class="modal fade" id="updatePaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="UpdatePaymentStatus" method="post">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-pencil-square me-2 text-warning"></i>Update Payment Status</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="modalPaymentId" name="paymentId" />
+                    
+                    <div class="mb-3">
+                        <label class="form-label text-muted">Affiliate</label>
+                        <input type="text" id="modalAffiliateName" class="form-control bg-light" readonly />
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="modalStatus" class="form-label fw-bold">Select Status</label>
+                        <select id="modalStatus" name="status" class="form-select">
+                            @foreach (var st in Enum.GetValues(typeof(Elwala.Models.AffiliateStatus)).Cast<Elwala.Models.AffiliateStatus>())
+                            {
+                                <option value="@st">@st</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-primary"><i class="bi bi-save me-1"></i> Save Changes</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Record New Transaction -->
+<div class="modal fade" id="addPaymentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <form asp-action="AddPaymentRecord" method="post">
+                <div class="modal-header bg-success text-white">
+                    <h5 class="modal-title fw-bold"><i class="bi bi-plus-circle me-2"></i>Record New Transaction</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="addAffiliateId" class="form-label fw-bold">Select Affiliate</label>
+                        <select id="addAffiliateId" name="affiliateRequestId" class="form-select" required>
+                            <option value="">-- Choose Affiliate --</option>
+                            @foreach (var aff in allAffiliates)
+                            {
+                                <option value="@aff.Id">@aff.FullName (@aff.Slug)</option>
+                            }
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="addStatus" class="form-label fw-bold">Transaction Status</label>
+                        <select id="addStatus" name="status" class="form-select" required>
+                            @foreach (var st in Enum.GetValues(typeof(Elwala.Models.AffiliateStatus)).Cast<Elwala.Models.AffiliateStatus>())
+                            {
+                                <option value="@st">@st</option>
+                            }
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="submit" class="btn btn-success"><i class="bi bi-check-circle me-1"></i> Add Transaction</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function openUpdateModal(id, currentStatus, affiliateName) {
+            document.getElementById('modalPaymentId').value = id;
+            document.getElementById('modalAffiliateName').value = affiliateName;
+            document.getElementById('modalStatus').value = currentStatus;
+            
+            const modal = new bootstrap.Modal(document.getElementById('updatePaymentModal'));
+            modal.show();
+        }
+    </script>
+}

@@ -349,8 +349,75 @@ namespace Elwala.Controllers
             ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
             ViewBag.CurrentPage = page;
             ViewBag.TotalPages = totalPages;
+            ViewBag.AllAffiliates = await _dbContext.AffiliateRequests.OrderBy(a => a.FullName).ToListAsync();
 
             return View(payments);
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> UpdatePaymentStatus(int paymentId, AffiliateStatus status)
+        {
+            var payment = await _dbContext.AffiliatePayments
+                                          .Include(p => p.AffiliateRequest)
+                                          .FirstOrDefaultAsync(p => p.Id == paymentId);
+            if (payment == null)
+            {
+                return NotFound();
+            }
+
+            var oldStatus = payment.Status;
+            payment.Status = status;
+
+            if (payment.AffiliateRequest != null)
+            {
+                if (status == AffiliateStatus.Approved && oldStatus != AffiliateStatus.Approved)
+                {
+                    payment.AffiliateRequest.Count += 1;
+                }
+                else if (oldStatus == AffiliateStatus.Approved && status != AffiliateStatus.Approved && payment.AffiliateRequest.Count > 0)
+                {
+                    payment.AffiliateRequest.Count -= 1;
+                }
+            }
+
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Backend updated Payment #{PaymentId} status from {OldStatus} to {NewStatus} for Affiliate #{AffiliateId}", 
+                paymentId, oldStatus, status, payment.AffiliateRequestId);
+
+            return RedirectToAction(nameof(PaymentsDashboard));
+        }
+
+        [HttpPost]
+        [Authorize]
+        public async Task<IActionResult> AddPaymentRecord(int affiliateRequestId, AffiliateStatus status)
+        {
+            var affiliate = await _dbContext.AffiliateRequests.FindAsync(affiliateRequestId);
+            if (affiliate == null)
+            {
+                return NotFound();
+            }
+
+            var payment = new AffiliatePayment
+            {
+                AffiliateRequestId = affiliateRequestId,
+                Status = status,
+                CreatedAt = DateTime.UtcNow
+            };
+
+            if (status == AffiliateStatus.Approved)
+            {
+                affiliate.Count += 1;
+            }
+
+            _dbContext.AffiliatePayments.Add(payment);
+            await _dbContext.SaveChangesAsync();
+
+            _logger.LogInformation("Backend created new Payment record #{PaymentId} with status {Status} for Affiliate #{AffiliateId}", 
+                payment.Id, status, affiliateRequestId);
+
+            return RedirectToAction(nameof(PaymentsDashboard));
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
