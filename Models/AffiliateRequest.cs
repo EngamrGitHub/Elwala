@@ -41,6 +41,9 @@ namespace Elwala.Models
         public Dictionary<string, string> PlatformUrls { get; set; } = new Dictionary<string, string>();
 
         public int Count { get; set; } = 0;
+
+        [Display(Name = "Visits Count")]
+        public int VisitsCount { get; set; } = 0;
     }
 
     public enum PartnerType

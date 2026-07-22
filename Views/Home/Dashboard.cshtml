@@ -94,14 +94,14 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="kpi-card border-start border-4 border-warning">
+            <div class="kpi-card border-start border-4 border-info">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <div class="text-muted small fw-bold text-uppercase">Pending Count (قيد الانتظار)</div>
-                        <div class="fs-2 fw-bold text-warning mt-1">@(ViewBag.TotalPendingCount ?? 0)</div>
+                        <div class="text-muted small fw-bold text-uppercase">Total Visits (إجمالي الزيارات)</div>
+                        <div class="fs-2 fw-bold text-info mt-1">@(ViewBag.TotalVisits ?? 0)</div>
                     </div>
-                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
-                        <i class="bi bi-clock-history fs-3"></i>
+                    <div class="bg-info bg-opacity-10 p-3 rounded-circle text-info">
+                        <i class="bi bi-eye fs-3"></i>
                     </div>
                 </div>
             </div>
@@ -134,17 +134,7 @@
                     </select>
                 </div>
 
-                <!-- Payment Status Filter -->
-                <div class="col-md-2">
-                    <label for="status" class="form-label fw-bold small text-secondary">Status</label>
-                    <select id="status" name="status" class="form-select">
-                        <option value="">All Statuses</option>
-                        @foreach (var st in Enum.GetValues(typeof(Elwala.Models.AffiliateStatus)).Cast<Elwala.Models.AffiliateStatus>())
-                        {
-                            <option value="@st" selected="@(selectedStatus == st)">@st</option>
-                        }
-                    </select>
-                </div>
+
 
                 <!-- Sort By -->
                 <div class="col-md-2">
@@ -154,6 +144,8 @@
                         <option value="date_asc" selected="@(currentSort == "date_asc")">Oldest First</option>
                         <option value="count_desc" selected="@(currentSort == "count_desc")">Highest Success</option>
                         <option value="count_asc" selected="@(currentSort == "count_asc")">Lowest Success</option>
+                        <option value="visits_desc" selected="@(currentSort == "visits_desc")">Highest Visits</option>
+                        <option value="visits_asc" selected="@(currentSort == "visits_asc")">Lowest Visits</option>
                         <option value="name_asc" selected="@(currentSort == "name_asc")">Name (A - Z)</option>
                         <option value="name_desc" selected="@(currentSort == "name_desc")">Name (Z - A)</option>
                     </select>
@@ -191,8 +183,8 @@
                         <th>Slug</th>
                         <th>Type</th>
                         <th>Lang</th>
+                        <th class="text-center">Visits</th>
                         <th class="text-center">Success Count</th>
-                        <th class="text-center">Pending Count</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -203,8 +195,7 @@
                         {
                             var approvedCount = item.Payments?.Count(p => p.Status == Elwala.Models.AffiliateStatus.Approved) ?? 0;
                             var successCount = Math.Max(item.Count, approvedCount);
-                            var pendingCount = item.Payments?.Count(p => p.Status == Elwala.Models.AffiliateStatus.Pending) ?? 0;
-
+ 
                             <tr>
                                 <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MMM-dd")</td>
                                 <td class="fw-bold text-dark">@item.FullName</td>
@@ -213,20 +204,20 @@
                                 <td><span class="badge bg-primary bg-opacity-10 text-primary border border-primary">@item.Type</span></td>
                                 <td><span class="badge bg-secondary">@item.LanguageCode</span></td>
                                 
+                                <!-- Visits Count Badge -->
+                                <td class="text-center">
+                                    <span class="badge bg-info text-dark px-3 py-2 fs-6">
+                                        <i class="bi bi-eye-fill me-1"></i>@item.VisitsCount
+                                    </span>
+                                </td>
+
                                 <!-- Success Count Badge -->
                                 <td class="text-center">
                                     <span class="badge bg-success px-3 py-2 fs-6">
                                         <i class="bi bi-check-circle me-1"></i>@successCount
                                     </span>
                                 </td>
-
-                                <!-- Pending Count Badge -->
-                                <td class="text-center">
-                                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">
-                                        <i class="bi bi-clock me-1"></i>@pendingCount
-                                    </span>
-                                </td>
-
+ 
                                 <!-- Actions: View & Edit -->
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
@@ -255,9 +246,7 @@
         </div>
 
         <!-- Pagination -->
-        @if (ViewBag.TotalPages > 1)
-        {
-            <nav aria-label="Page navigation" class="mt-4">
+        <nav aria-label="Page navigation" class="mt-4">
                 <ul class="pagination justify-content-center">
                     <li class="page-item @(ViewBag.CurrentPage <= 1 ? "disabled" : "")">
                         <a class="page-link" asp-action="Dashboard"
@@ -296,7 +285,6 @@
                     </li>
                 </ul>
             </nav>
-        }
     </div>
 </div>
 

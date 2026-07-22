@@ -49,23 +49,24 @@ namespace Elwala.Controllers
             var cleanSlug = model.Slug?.ToLower().Trim();
             model.Slug = cleanSlug;
 
+            // Check if slug is unique
+            if (!string.IsNullOrEmpty(cleanSlug))
+            {
+                var isSlugTaken = await _dbContext.AffiliateRequests.AnyAsync(a => a.Slug == cleanSlug);
+                if (isSlugTaken)
+                {
+                    ModelState.AddModelError("Slug", "This URL Slug is already taken by another affiliate. Please choose a different one.");
+                    return View(model);
+                }
+            }
+
             // 1. Save to database directly
             _dbContext.AffiliateRequests.Add(model);
             await _dbContext.SaveChangesAsync();
 
-            // 2. Create initial payment record
-            var initialPayment = new AffiliatePayment
-            {
-                AffiliateRequestId = model.Id,
-                Status = AffiliateStatus.Pending,
-                CreatedAt = DateTime.UtcNow
-            };
-            _dbContext.AffiliatePayments.Add(initialPayment);
-            await _dbContext.SaveChangesAsync();
-
             // Default to 'ar' if somehow not provided
             var lang = string.IsNullOrWhiteSpace(model.LanguageCode) ? "ar" : model.LanguageCode;
-            var uniqueUrl = $"https://assis.ellwaa.com/{lang}/create-request?ref={Uri.EscapeDataString(cleanSlug ?? string.Empty)}";
+            var uniqueUrl = $"{Request.Scheme}://{Request.Host}/go/{cleanSlug}";
             
             var result = new AffiliateResponse 
             {
@@ -126,7 +127,7 @@ namespace Elwala.Controllers
             // KPI Counts across database
             int totalAffiliates = await query.CountAsync();
             int totalSuccessCount = await _dbContext.AffiliatePayments.CountAsync(p => p.Status == AffiliateStatus.Approved);
-            int totalPendingCount = await _dbContext.AffiliatePayments.CountAsync(p => p.Status == AffiliateStatus.Pending);
+            int totalVisits = await _dbContext.AffiliateRequests.SumAsync(a => a.VisitsCount);
 
             // Sorting
             switch (sortBy?.ToLower())
@@ -139,6 +140,12 @@ namespace Elwala.Controllers
                     break;
                 case "count_asc":
                     query = query.OrderBy(a => a.Count);
+                    break;
+                case "visits_desc":
+                    query = query.OrderByDescending(a => a.VisitsCount);
+                    break;
+                case "visits_asc":
+                    query = query.OrderBy(a => a.VisitsCount);
                     break;
                 case "name_asc":
                     query = query.OrderBy(a => a.FullName);
@@ -186,7 +193,7 @@ namespace Elwala.Controllers
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalAffiliates = totalAffiliates;
             ViewBag.TotalSuccessCount = totalSuccessCount;
-            ViewBag.TotalPendingCount = totalPendingCount;
+            ViewBag.TotalVisits = totalVisits;
 
             return View(affiliates);
         }
@@ -218,11 +225,9 @@ namespace Elwala.Controllers
 
             if (Request.Headers["X-Requested-With"] == "XMLHttpRequest")
             {
-                var lang = string.IsNullOrWhiteSpace(affiliate.LanguageCode) ? "ar" : affiliate.LanguageCode;
-                var uniqueUrl = $"https://assis.ellwaa.com/{lang}/create-request?ref={Uri.EscapeDataString(affiliate.Slug ?? string.Empty)}";
+                var uniqueUrl = $"{Request.Scheme}://{Request.Host}/go/{affiliate.Slug}";
                 var approvedPayments = affiliate.Payments.Count(p => p.Status == AffiliateStatus.Approved);
                 var successCount = Math.Max(affiliate.Count, approvedPayments);
-                var pendingCount = affiliate.Payments.Count(p => p.Status == AffiliateStatus.Pending);
 
                 return Json(new
                 {
@@ -234,8 +239,8 @@ namespace Elwala.Controllers
                     languageCode = affiliate.LanguageCode,
                     createdAt = affiliate.CreatedAt.ToString("yyyy-MMM-dd HH:mm"),
                     count = affiliate.Count,
+                    visitsCount = affiliate.VisitsCount,
                     successCount = successCount,
-                    pendingCount = pendingCount,
                     uniqueUrl = uniqueUrl,
                     platformUrls = affiliate.PlatformUrls,
                     payments = affiliate.Payments.Select(p => new
@@ -304,6 +309,15 @@ namespace Elwala.Controllers
 
             // Handle Slug uniquely
             var cleanSlug = model.Slug?.ToLower().Trim();
+            if (!string.IsNullOrEmpty(cleanSlug))
+            {
+                var isSlugTaken = await _dbContext.AffiliateRequests.AnyAsync(a => a.Slug == cleanSlug && a.Id != id);
+                if (isSlugTaken)
+                {
+                    ModelState.AddModelError("Slug", "This URL Slug is already taken by another affiliate. Please choose a different one.");
+                    return View(model);
+                }
+            }
             affiliate.Slug = cleanSlug;
 
             // Update JSON
@@ -351,6 +365,36 @@ namespace Elwala.Controllers
             ViewBag.TotalPages = totalPages;
 
             return View(payments);
+        }
+
+        [HttpGet("go/{slug}")]
+        [HttpGet("visitor/{slug}")]
+        [HttpGet("visit/{slug}")]
+        [AllowAnonymous]
+        public async Task<IActionResult> TrackAndRedirect(string slug)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                return NotFound();
+            }
+
+            var cleanSlug = slug.ToLower().Trim();
+            var affiliate = await _dbContext.AffiliateRequests
+                                            .FirstOrDefaultAsync(a => a.Slug == cleanSlug);
+            if (affiliate == null)
+            {
+                return NotFound();
+            }
+
+            // Increment visitor/visits count
+            affiliate.VisitsCount++;
+            _dbContext.AffiliateRequests.Update(affiliate);
+            await _dbContext.SaveChangesAsync();
+
+            // Redirect to actual target URL
+            var lang = string.IsNullOrWhiteSpace(affiliate.LanguageCode) ? "ar" : affiliate.LanguageCode;
+            var targetUrl = $"https://assis.ellwaa.com/{lang}/create-request?ref={Uri.EscapeDataString(cleanSlug)}";
+            return Redirect(targetUrl);
         }
 
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
