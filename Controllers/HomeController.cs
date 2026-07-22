@@ -126,7 +126,7 @@ namespace Elwala.Controllers
             // KPI Counts across database
             int totalAffiliates = await query.CountAsync();
             int totalSuccessCount = await _dbContext.AffiliatePayments.CountAsync(p => p.Status == AffiliateStatus.Approved);
-            int totalNoSuccessCount = await _dbContext.AffiliatePayments.CountAsync(p => p.Status != AffiliateStatus.Approved);
+            int totalPendingCount = await _dbContext.AffiliatePayments.CountAsync(p => p.Status == AffiliateStatus.Pending);
 
             // Sorting
             switch (sortBy?.ToLower())
@@ -186,7 +186,7 @@ namespace Elwala.Controllers
             ViewBag.TotalPages = totalPages;
             ViewBag.TotalAffiliates = totalAffiliates;
             ViewBag.TotalSuccessCount = totalSuccessCount;
-            ViewBag.TotalNoSuccessCount = totalNoSuccessCount;
+            ViewBag.TotalPendingCount = totalPendingCount;
 
             return View(affiliates);
         }
@@ -222,7 +222,7 @@ namespace Elwala.Controllers
                 var uniqueUrl = $"https://assis.ellwaa.com/{lang}/create-request?ref={Uri.EscapeDataString(affiliate.Slug ?? string.Empty)}";
                 var approvedPayments = affiliate.Payments.Count(p => p.Status == AffiliateStatus.Approved);
                 var successCount = Math.Max(affiliate.Count, approvedPayments);
-                var noSuccessCount = affiliate.Payments.Count(p => p.Status != AffiliateStatus.Approved);
+                var pendingCount = affiliate.Payments.Count(p => p.Status == AffiliateStatus.Pending);
 
                 return Json(new
                 {
@@ -235,7 +235,7 @@ namespace Elwala.Controllers
                     createdAt = affiliate.CreatedAt.ToString("yyyy-MMM-dd HH:mm"),
                     count = affiliate.Count,
                     successCount = successCount,
-                    noSuccessCount = noSuccessCount,
+                    pendingCount = pendingCount,
                     uniqueUrl = uniqueUrl,
                     platformUrls = affiliate.PlatformUrls,
                     payments = affiliate.Payments.Select(p => new

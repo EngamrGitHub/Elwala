@@ -6,7 +6,7 @@
     var uniqueUrl = $"https://assis.ellwaa.com/{lang}/create-request?ref={Uri.EscapeDataString(Model.Slug ?? string.Empty)}";
     var approvedPayments = Model.Payments?.Count(p => p.Status == Elwala.Models.AffiliateStatus.Approved) ?? 0;
     var successCount = Math.Max(Model.Count, approvedPayments);
-    var noSuccessCount = Model.Payments?.Count(p => p.Status != Elwala.Models.AffiliateStatus.Approved) ?? 0;
+    var pendingCount = Model.Payments?.Count(p => p.Status == Elwala.Models.AffiliateStatus.Pending) ?? 0;
 }
 
 <style>
@@ -60,9 +60,9 @@
                         </div>
                     </div>
                     <div class="col-md-4 mb-3 mb-md-0">
-                        <div class="stat-box border-start border-4 border-danger">
-                            <div class="text-muted small text-uppercase fw-bold">No Success Count (غير الناجح)</div>
-                            <div class="fs-2 fw-bold text-danger mt-1">@noSuccessCount</div>
+                        <div class="stat-box border-start border-4 border-warning">
+                            <div class="text-muted small text-uppercase fw-bold">Pending Count (قيد الانتظار)</div>
+                            <div class="fs-2 fw-bold text-warning mt-1">@pendingCount</div>
                         </div>
                     </div>
                     <div class="col-md-4">

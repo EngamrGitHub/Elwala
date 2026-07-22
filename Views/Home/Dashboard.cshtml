@@ -94,14 +94,14 @@
             </div>
         </div>
         <div class="col-md-4">
-            <div class="kpi-card border-start border-4 border-danger">
+            <div class="kpi-card border-start border-4 border-warning">
                 <div class="d-flex align-items-center justify-content-between">
                     <div>
-                        <div class="text-muted small fw-bold text-uppercase">Count No Success (غير الناجح)</div>
-                        <div class="fs-2 fw-bold text-danger mt-1">@(ViewBag.TotalNoSuccessCount ?? 0)</div>
+                        <div class="text-muted small fw-bold text-uppercase">Pending Count (قيد الانتظار)</div>
+                        <div class="fs-2 fw-bold text-warning mt-1">@(ViewBag.TotalPendingCount ?? 0)</div>
                     </div>
-                    <div class="bg-danger bg-opacity-10 p-3 rounded-circle text-danger">
-                        <i class="bi bi-exclamation-triangle-fill fs-3"></i>
+                    <div class="bg-warning bg-opacity-10 p-3 rounded-circle text-warning">
+                        <i class="bi bi-clock-history fs-3"></i>
                     </div>
                 </div>
             </div>
@@ -192,7 +192,7 @@
                         <th>Type</th>
                         <th>Lang</th>
                         <th class="text-center">Success Count</th>
-                        <th class="text-center">No-Success Count</th>
+                        <th class="text-center">Pending Count</th>
                         <th class="text-center">Actions</th>
                     </tr>
                 </thead>
@@ -203,7 +203,7 @@
                         {
                             var approvedCount = item.Payments?.Count(p => p.Status == Elwala.Models.AffiliateStatus.Approved) ?? 0;
                             var successCount = Math.Max(item.Count, approvedCount);
-                            var noSuccessCount = item.Payments?.Count(p => p.Status != Elwala.Models.AffiliateStatus.Approved) ?? 0;
+                            var pendingCount = item.Payments?.Count(p => p.Status == Elwala.Models.AffiliateStatus.Pending) ?? 0;
 
                             <tr>
                                 <td class="text-muted small">@item.CreatedAt.ToString("yyyy-MMM-dd")</td>
@@ -220,19 +220,19 @@
                                     </span>
                                 </td>
 
-                                <!-- No Success Count Badge -->
+                                <!-- Pending Count Badge -->
                                 <td class="text-center">
-                                    <span class="badge bg-danger bg-opacity-10 text-danger border border-danger px-3 py-2 fs-6">
-                                        <i class="bi bi-x-circle me-1"></i>@noSuccessCount
+                                    <span class="badge bg-warning text-dark px-3 py-2 fs-6">
+                                        <i class="bi bi-clock me-1"></i>@pendingCount
                                     </span>
                                 </td>
 
                                 <!-- Actions: View & Edit -->
                                 <td class="text-center">
                                     <div class="btn-group" role="group">
-                                        <button type="button" class="btn btn-sm btn-outline-info rounded-pill px-3 me-1" onclick="openViewModal(@item.Id)">
+                                        <a asp-action="Details" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info rounded-pill px-3 me-1">
                                             <i class="bi bi-eye"></i> View
-                                        </button>
+                                        </a>
                                         <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-sm btn-outline-secondary rounded-pill px-3">
                                             <i class="bi bi-pencil-square"></i> Edit
                                         </a>
@@ -300,185 +300,4 @@
     </div>
 </div>
 
-<!-- View Details Bootstrap Modal -->
-<div class="modal fade" id="viewAffiliateModal" tabindex="-1" aria-labelledby="viewAffiliateModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg modal-dialog-centered">
-        <div class="modal-content shadow-lg border-0">
-            <div class="modal-header bg-dark text-white">
-                <h5 class="modal-title fw-bold" id="viewAffiliateModalLabel">
-                    <i class="bi bi-person-bounding-box me-2 text-warning"></i>Affiliate Profile Details
-                </h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body p-4" id="modalBodyContent">
-                <div class="text-center py-5">
-                    <div class="spinner-border text-warning" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2 text-muted">Loading affiliate details...</p>
-                </div>
-            </div>
-            <div class="modal-footer bg-light">
-                <a id="modalEditBtn" href="#" class="btn btn-warning fw-bold">
-                    <i class="bi bi-pencil-square me-1"></i> Edit Profile
-                </a>
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            </div>
-        </div>
-    </div>
-</div>
 
-@section Scripts {
-    <script>
-        function openViewModal(id) {
-            const modal = new bootstrap.Modal(document.getElementById('viewAffiliateModal'));
-            const modalBody = document.getElementById('modalBodyContent');
-            const editBtn = document.getElementById('modalEditBtn');
-            
-            editBtn.href = `/Home/Edit/${id}`;
-            modalBody.innerHTML = `
-                <div class="text-center py-5">
-                    <div class="spinner-border text-warning" role="status">
-                        <span class="visually-hidden">Loading...</span>
-                    </div>
-                    <p class="mt-2 text-muted">Fetching data...</p>
-                </div>
-            `;
-            modal.show();
-
-            fetch(`/Home/Details/${id}`, {
-                headers: {
-                    'X-Requested-With': 'XMLHttpRequest'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                let platformListHtml = '<span class="text-muted">No platforms specified.</span>';
-                if (data.platformUrls && Object.keys(data.platformUrls).length > 0) {
-                    platformListHtml = '<ul class="list-group list-group-flush">';
-                    for (const [key, value] of Object.entries(data.platformUrls)) {
-                        platformListHtml += `
-                            <li class="list-group-item px-0 d-flex justify-content-between">
-                                <span class="fw-bold">${key}:</span>
-                                <a href="${value}" target="_blank" class="text-primary">${value} <i class="bi bi-box-arrow-up-right small ms-1"></i></a>
-                            </li>
-                        `;
-                    }
-                    platformListHtml += '</ul>';
-                }
-
-                let paymentsHtml = '<span class="text-muted">No payment records found.</span>';
-                if (data.payments && data.payments.length > 0) {
-                    paymentsHtml = `
-                        <table class="table table-sm table-bordered mt-2 align-middle">
-                            <thead class="table-light">
-                                <tr>
-                                    <th>#</th>
-                                    <th>Date</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                    `;
-                    data.payments.forEach(p => {
-                        const statusClass = p.status === 'Approved' ? 'bg-success' :
-                                            p.status === 'Rejected' ? 'bg-danger' : 'bg-warning text-dark';
-                        paymentsHtml += `
-                            <tr>
-                                <td>${p.id}</td>
-                                <td>${p.createdAt}</td>
-                                <td><span class="badge ${statusClass}">${p.status}</span></td>
-                            </tr>
-                        `;
-                    });
-                    paymentsHtml += '</tbody></table>';
-                }
-
-                modalBody.innerHTML = `
-                    <div class="row mb-3 align-items-center">
-                        <div class="col-md-8">
-                            <h3 class="fw-bold text-dark m-0">${data.fullName}</h3>
-                            <span class="badge bg-light text-dark border me-1">${data.slug}</span>
-                            <span class="badge bg-primary bg-opacity-10 text-primary border border-primary">${data.type || 'N/A'}</span>
-                        </div>
-                        <div class="col-md-4 text-md-end">
-                            <span class="text-muted small">Registered: ${data.createdAt}</span>
-                        </div>
-                    </div>
-
-                    <!-- Metrics Stats -->
-                    <div class="row g-2 mb-4">
-                        <div class="col-6">
-                            <div class="p-3 bg-success bg-opacity-10 border border-success rounded text-center">
-                                <div class="text-success small fw-bold text-uppercase">Success Count (العدد الناجح)</div>
-                                <div class="fs-3 fw-bold text-success mt-1">${data.successCount}</div>
-                            </div>
-                        </div>
-                        <div class="col-6">
-                            <div class="p-3 bg-danger bg-opacity-10 border border-danger rounded text-center">
-                                <div class="text-danger small fw-bold text-uppercase">No-Success Count (غير الناجح)</div>
-                                <div class="fs-3 fw-bold text-danger mt-1">${data.noSuccessCount}</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Main Info Grid -->
-                    <div class="row mb-3">
-                        <div class="col-md-6 mb-3 mb-md-0">
-                            <div class="card h-100 border">
-                                <div class="card-header bg-light fw-bold">Contact & Details</div>
-                                <div class="card-body">
-                                    <p class="mb-2"><strong>Phone:</strong> ${data.phoneNumber}</p>
-                                    <p class="mb-0"><strong>Default Language:</strong> <span class="badge bg-secondary">${data.languageCode}</span></p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card h-100 border">
-                                <div class="card-header bg-light fw-bold">Unique Referral Link</div>
-                                <div class="card-body">
-                                    <div class="input-group">
-                                        <input type="text" id="modalUniqueUrl" class="form-control form-control-sm" value="${data.uniqueUrl}" readonly />
-                                        <button class="btn btn-sm btn-outline-primary" onclick="copyModalLink()">Copy</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Platforms -->
-                    <div class="card mb-3 border">
-                        <div class="card-header bg-light fw-bold">Platform URLs</div>
-                        <div class="card-body py-2">
-                            ${platformListHtml}
-                        </div>
-                    </div>
-
-                    <!-- Payment Logs -->
-                    <div class="card border">
-                        <div class="card-header bg-light fw-bold">Payment History</div>
-                        <div class="card-body py-2">
-                            ${paymentsHtml}
-                        </div>
-                    </div>
-                `;
-            })
-            .catch(err => {
-                modalBody.innerHTML = `
-                    <div class="alert alert-danger">
-                        <i class="bi bi-exclamation-circle me-1"></i> Failed to fetch details. Please try again.
-                    </div>
-                `;
-            });
-        }
-
-        function copyModalLink() {
-            const input = document.getElementById('modalUniqueUrl');
-            if (input) {
-                input.select();
-                navigator.clipboard.writeText(input.value);
-                alert('Copied to clipboard: ' + input.value);
-            }
-        }
-    </script>
-}
