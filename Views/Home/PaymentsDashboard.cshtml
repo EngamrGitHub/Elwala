@@ -71,7 +71,6 @@
                         <th>Affiliate Name</th>
                         <th>Slug</th>
                         <th>Status</th>
-                        <th class="text-center">Actions</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -92,8 +91,8 @@
                                     <span class="badge @statusClass px-3 py-2 fs-6">@item.Status</span>
                                 </td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="openUpdateModal(@item.Id, '@item.Status', '@(item.AffiliateRequest?.FullName ?? "Unknown")')">
-                                        <i class="bi bi-pencil"></i> Update Status
+                                    <button class="btn btn-sm btn-outline-primary rounded-pill px-3" onclick="alert('API Integration point: Edit Payment for @item.Id')">
+                                        <i class="bi bi-pencil"></i> Update
                                     </button>
                                 </td>
                             </tr>
@@ -102,7 +101,7 @@
                     else
                     {
                         <tr>
-                            <td colspan="6" class="text-center py-4 text-muted">
+                            <td colspan="5" class="text-center py-4 text-muted">
                                 <i class="bi bi-inbox fs-1 d-block mb-2"></i>
                                 No payment records found.
                             </td>

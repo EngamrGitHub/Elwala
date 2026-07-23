@@ -37,17 +37,74 @@ namespace Elwala.Controllers
             _context.AffiliateRequests.Add(request);
             await _context.SaveChangesAsync();
 
-            // Create initial payment/status record
-            var initialPayment = new AffiliatePayment
+            return Ok(new { message = "Affiliate created successfully.", data = request });
+        }
+
+        // POST: api/affiliateapi/visitor/{slug} or api/affiliate/visitor/{slug}
+        [HttpPost("visitor/{slug}")]
+        [HttpPost("/api/affiliate/visitor/{slug}")]
+        [HttpPost("/api/affiliate/visit/{slug}")]
+        public async Task<IActionResult> TrackVisitorBySlug(string slug)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
             {
-                AffiliateRequestId = request.Id,
-                Status = AffiliateStatus.Pending,
-                CreatedAt = DateTime.UtcNow
-            };
-            _context.AffiliatePayments.Add(initialPayment);
+                return BadRequest(new { success = false, message = "Slug is required" });
+            }
+
+            var cleanSlug = slug.ToLower().Trim();
+            var affiliate = await _context.AffiliateRequests
+                .FirstOrDefaultAsync(a => a.Slug == cleanSlug);
+
+            if (affiliate == null)
+            {
+                return NotFound(new { success = false, message = "Affiliate not found" });
+            }
+
+            affiliate.VisitsCount += 1;
             await _context.SaveChangesAsync();
 
-            return Ok(new { message = "Affiliate created successfully.", data = request });
+            return Ok(new
+            {
+                success = true,
+                message = "Visitor count updated successfully",
+                slug = affiliate.Slug,
+                visitsCount = affiliate.VisitsCount
+            });
+        }
+
+        // GET: api/affiliateapi/visitor/{slug} or api/affiliate/visitor/{slug}
+        [HttpGet("visitor/{slug}")]
+        [HttpGet("/api/affiliate/visitor/{slug}")]
+        [HttpGet("/api/affiliate/visit/{slug}")]
+        public async Task<IActionResult> GetVisitorBySlug(string slug)
+        {
+            if (string.IsNullOrWhiteSpace(slug))
+            {
+                return BadRequest(new { success = false, message = "Slug is required" });
+            }
+
+            var cleanSlug = slug.ToLower().Trim();
+            var affiliate = await _context.AffiliateRequests
+                .FirstOrDefaultAsync(a => a.Slug == cleanSlug);
+
+            if (affiliate == null)
+            {
+                return NotFound(new { success = false, message = "Affiliate not found" });
+            }
+
+            // INCREMENT EVEN ON GET REQUEST, just in case frontend tracks via GET
+            affiliate.VisitsCount += 1;
+            await _context.SaveChangesAsync();
+
+            return Ok(new
+            {
+                success = true,
+                id = affiliate.Id,
+                fullName = affiliate.FullName,
+                slug = affiliate.Slug,
+                visitsCount = affiliate.VisitsCount,
+                successCount = affiliate.Count
+            });
         }
 
         // PUT: api/affiliateapi/{id}/status
