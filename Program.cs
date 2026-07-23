@@ -67,8 +67,16 @@ namespace Elwala
             // Auto-apply any pending migrations on startup (creates tables automatically)
             using (var scope = app.Services.CreateScope())
             {
-                var db = scope.ServiceProvider.GetRequiredService<Elwala.Data.ApplicationDbContext>();
-                db.Database.Migrate();
+                var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
+                try
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<Elwala.Data.ApplicationDbContext>();
+                    db.Database.Migrate();
+                }
+                catch (Exception ex)
+                {
+                    logger.LogError(ex, "An error occurred while connecting or migrating the database.");
+                }
             }
 
             app.Run();
