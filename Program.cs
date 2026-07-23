@@ -64,18 +64,29 @@ namespace Elwala
                 name: "default",
                 pattern: "{controller=Account}/{action=Login}/{id?}");
 
-            // Auto-apply any pending migrations on startup (creates tables automatically)
+            // Auto-apply any pending migrations on startup.
+            // Fail FAST if migration fails — a half-migrated schema causes
+            // "invalid column name" errors on every request, which is worse
+            // than a clean startup failure that surfaces the real error in logs.
             using (var scope = app.Services.CreateScope())
             {
                 var logger = scope.ServiceProvider.GetRequiredService<ILogger<Program>>();
                 try
                 {
                     var db = scope.ServiceProvider.GetRequiredService<Elwala.Data.ApplicationDbContext>();
+                    var pending = db.Database.GetPendingMigrations();
+                    if (pending.Any())
+                    {
+                        logger.LogInformation("Applying {Count} pending EF migration(s): {Migrations}",
+                            pending.Count(), string.Join(", ", pending));
+                    }
                     db.Database.Migrate();
+                    logger.LogInformation("Database migrations applied successfully.");
                 }
                 catch (Exception ex)
                 {
-                    logger.LogError(ex, "An error occurred while connecting or migrating the database.");
+                    logger.LogCritical(ex, "FATAL: Database migration failed. The app cannot serve requests with a stale schema. Apply the migration manually and restart.");
+                    throw; // Fail fast — do NOT start serving with a half-migrated DB.
                 }
             }
 
