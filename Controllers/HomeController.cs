@@ -34,15 +34,30 @@ namespace Elwala.Controllers
         [Authorize]
         public async Task<IActionResult> Affiliate(AffiliateRequest model)
         {
+            var keys = Request.Form["PlatformKeys"];
+            var values = Request.Form["PlatformValues"];
+            var platformUrls = new Dictionary<string, string>();
+            if (keys.Count > 0)
+            {
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    var k = keys[i]?.Trim();
+                    var v = values.Count > i ? values[i]?.Trim() : "";
+                    if (!string.IsNullOrWhiteSpace(k) && !platformUrls.ContainsKey(k))
+                    {
+                        platformUrls[k] = v ?? "";
+                    }
+                }
+            }
+            model.PlatformUrls = platformUrls;
+            if (platformUrls.Any())
+            {
+                model.PlatformUrlsJson = System.Text.Json.JsonSerializer.Serialize(platformUrls);
+            }
+
             if (!ModelState.IsValid)
             {
                 return View(model);
-            }
-
-            // Serialize platform URLs
-            if (model.PlatformUrls != null && model.PlatformUrls.Any())
-            {
-                model.PlatformUrlsJson = System.Text.Json.JsonSerializer.Serialize(model.PlatformUrls);
             }
 
             // Ensure the Slug is clean
@@ -285,6 +300,31 @@ namespace Elwala.Controllers
         [Authorize]
         public async Task<IActionResult> Edit(int id, AffiliateRequest model)
         {
+            var keys = Request.Form["PlatformKeys"];
+            var values = Request.Form["PlatformValues"];
+            var platformUrls = new Dictionary<string, string>();
+            if (keys.Count > 0)
+            {
+                for (int i = 0; i < keys.Count; i++)
+                {
+                    var k = keys[i]?.Trim();
+                    var v = values.Count > i ? values[i]?.Trim() : "";
+                    if (!string.IsNullOrWhiteSpace(k) && !platformUrls.ContainsKey(k))
+                    {
+                        platformUrls[k] = v ?? "";
+                    }
+                }
+            }
+            model.PlatformUrls = platformUrls;
+            if (platformUrls.Any())
+            {
+                model.PlatformUrlsJson = System.Text.Json.JsonSerializer.Serialize(platformUrls);
+            }
+            else
+            {
+                model.PlatformUrlsJson = null;
+            }
+
             if (id != model.Id)
             {
                 return BadRequest();

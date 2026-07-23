@@ -42,6 +42,16 @@ namespace Elwala.Models
 
         public int Count { get; set; } = 0;
 
+        // Number of referred signups (new client accounts created via this
+        // affiliate's link). Incremented by the /api/affiliate/event/{slug}
+        // endpoint on a "signup" event.
+        public int SignupCount { get; set; } = 0;
+
+        // Number of referred assis requests created but not yet paid.
+        // Incremented on a "payment-pending" event; idempotent by requestId
+        // (same request does not double-count).
+        public int PendingCount { get; set; } = 0;
+
         [Display(Name = "Visits Count")]
         public int VisitsCount { get; set; } = 0;
     }

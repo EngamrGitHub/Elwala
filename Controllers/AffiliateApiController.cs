@@ -111,6 +111,17 @@ namespace Elwala.Controllers
         [HttpPut("{id}/status")]
         public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateStatusDto statusDto)
         {
+            if (!Enum.TryParse<AffiliateStatus>(statusDto.Status, true, out var newStatus))
+            {
+                return BadRequest(new { message = "Invalid status value." });
+            }
+
+            var affiliateRequest = await _context.AffiliateRequests.FindAsync(id);
+            if (affiliateRequest == null)
+            {
+                return NotFound(new { message = "Affiliate not found." });
+            }
+
             var payment = await _context.AffiliatePayments
                                         .Where(p => p.AffiliateRequestId == id)
                                         .OrderByDescending(p => p.CreatedAt)
@@ -118,31 +129,34 @@ namespace Elwala.Controllers
 
             if (payment == null)
             {
-                return NotFound(new { message = "Payment record for Affiliate not found." });
-            }
+                payment = new AffiliatePayment
+                {
+                    AffiliateRequestId = id,
+                    Status = newStatus,
+                    CreatedAt = DateTime.UtcNow
+                };
+                _context.AffiliatePayments.Add(payment);
 
-            if (!Enum.TryParse<AffiliateStatus>(statusDto.Status, true, out var newStatus))
-            {
-                return BadRequest(new { message = "Invalid status value." });
-            }
-
-            var affiliateRequest = await _context.AffiliateRequests.FindAsync(payment.AffiliateRequestId);
-            if (newStatus == AffiliateStatus.Approved && payment.Status != AffiliateStatus.Approved)
-            {
-                if (affiliateRequest != null)
+                if (newStatus == AffiliateStatus.Approved)
                 {
                     affiliateRequest.Count += 1;
-                    _context.AffiliateRequests.Update(affiliateRequest);
                 }
             }
+            else
+            {
+                if (newStatus == AffiliateStatus.Approved && payment.Status != AffiliateStatus.Approved)
+                {
+                    affiliateRequest.Count += 1;
+                }
+                payment.Status = newStatus;
+            }
 
-            payment.Status = newStatus;
             await _context.SaveChangesAsync();
 
             return Ok(new { 
                 message = "Status updated successfully.", 
                 data = payment, 
-                currentCount = affiliateRequest?.Count 
+                currentCount = affiliateRequest.Count 
             });
         }
     }

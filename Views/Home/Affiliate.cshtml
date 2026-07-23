@@ -96,10 +96,10 @@
                                 <!-- Dynamic fields will be added here -->
                                 <div class="row mb-2 platform-row">
                                     <div class="col-4">
-                                        <input type="text" name="PlatformUrls[0].Key" class="form-control" placeholder="Platform (e.g., YouTube)" />
+                                        <input type="text" name="PlatformKeys" class="form-control" placeholder="Platform (e.g., YouTube)" />
                                     </div>
                                     <div class="col-7">
-                                        <input type="url" name="PlatformUrls[0].Value" class="form-control" placeholder="URL (e.g., https://youtube.com/c/tech)" />
+                                        <input type="text" name="PlatformValues" class="form-control" placeholder="URL (e.g., https://youtube.com/c/tech)" />
                                     </div>
                                     <div class="col-1 d-flex align-items-center justify-content-center">
                                         <button type="button" class="btn btn-sm btn-outline-danger py-2 px-3" title="Remove URL" onclick="this.closest('.platform-row').remove()">
@@ -137,10 +137,10 @@
             row.className = 'row mb-2 platform-row';
             row.innerHTML = `
                 <div class="col-4">
-                    <input type="text" name="PlatformUrls[${platformIndex}].Key" class="form-control" placeholder="Platform (e.g., Instagram)" />
+                    <input type="text" name="PlatformKeys" class="form-control" placeholder="Platform (e.g., Instagram)" />
                 </div>
                 <div class="col-7">
-                    <input type="url" name="PlatformUrls[${platformIndex}].Value" class="form-control" placeholder="URL" />
+                    <input type="text" name="PlatformValues" class="form-control" placeholder="URL" />
                 </div>
                 <div class="col-1 d-flex align-items-center justify-content-center">
                     <button type="button" class="btn btn-sm btn-outline-danger py-2 px-3" title="Remove URL" onclick="this.closest('.platform-row').remove()">
