@@ -132,8 +132,11 @@
 
                 <!-- Payments History -->
                 <div class="card border">
-                    <div class="card-header bg-light fw-bold text-dark">
-                        <i class="bi bi-clock-history me-1"></i> Payment & Conversion History
+                    <div class="card-header bg-light fw-bold text-dark d-flex justify-content-between align-items-center">
+                        <div>
+                            <i class="bi bi-clock-history me-1"></i> Payment & Conversion History
+                        </div>
+                        <span class="badge bg-success">Approved Only</span>
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
@@ -146,19 +149,31 @@
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @if (Model.Payments != null && Model.Payments.Any())
+                                    @{
+                                        var approvedList = Model.Payments?.Where(p => p.Status == Elwala.Models.AffiliateStatus.Approved).OrderByDescending(p => p.CreatedAt).ToList() ?? new List<Elwala.Models.AffiliatePayment>();
+                                    }
+                                    @if (approvedList.Any())
                                     {
-                                        foreach (var pay in Model.Payments.OrderByDescending(p => p.CreatedAt))
+                                        foreach (var pay in approvedList)
                                         {
                                             <tr>
                                                 <td>@pay.Id</td>
                                                 <td>@pay.CreatedAt.ToString("yyyy-MMM-dd HH:mm")</td>
                                                 <td>
-                                                    @{
-                                                        var badge = pay.Status == Elwala.Models.AffiliateStatus.Approved ? "bg-success" :
-                                                                    pay.Status == Elwala.Models.AffiliateStatus.Rejected ? "bg-danger" : "bg-warning text-dark";
-                                                    }
-                                                    <span class="badge @badge">@pay.Status</span>
+                                                    <span class="badge bg-success">@pay.Status</span>
+                                                </td>
+                                            </tr>
+                                        }
+                                    }
+                                    else if (Model.Count > 0)
+                                    {
+                                        @for (int i = 1; i <= Model.Count; i++)
+                                        {
+                                            <tr>
+                                                <td>#@i</td>
+                                                <td>@Model.CreatedAt.ToString("yyyy-MMM-dd HH:mm")</td>
+                                                <td>
+                                                    <span class="badge bg-success">Approved</span>
                                                 </td>
                                             </tr>
                                         }
@@ -166,7 +181,7 @@
                                     else
                                     {
                                         <tr>
-                                            <td colspan="3" class="text-center py-3 text-muted">No payment records.</td>
+                                            <td colspan="3" class="text-center py-3 text-muted">No approved payment records.</td>
                                         </tr>
                                     }
                                 </tbody>
